@@ -23,15 +23,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create request
-    const requestData = await createCouponRequest({
-      email,
-      libraryName,
-      description,
-    })
+  // Create request
+  const requestData = await createCouponRequest({
+    email,
+    libraryName,
+    description,
+  })
 
-    // Send confirmation email
-    await sendCouponRequestReceivedEmail(email, libraryName)
+  console.log("📧 [COUPON REQUEST] Sending email to:", email)
+  
+  // Send confirmation email
+  const emailSent = await sendCouponRequestReceivedEmail(email, libraryName)
+  
+  console.log("📧 [COUPON REQUEST] Email sent:", emailSent)
 
     return NextResponse.json({
       success: true,
