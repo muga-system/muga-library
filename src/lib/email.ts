@@ -10,8 +10,11 @@ interface SendEmailOptions {
 }
 
 async function sendEmail({ to, subject, html, text }: SendEmailOptions): Promise<boolean> {
+  console.log("📧 [EMAIL] RESEND_API_KEY exists:", !!RESEND_API_KEY)
+  console.log("📧 [EMAIL] EMAIL_FROM:", EMAIL_FROM)
+  
   if (!RESEND_API_KEY) {
-    console.log("📧 [EMAIL DEBUG]", { to, subject, html: html.substring(0, 100) + "..." })
+    console.log("📧 [EMAIL DEBUG - NO API KEY]", { to, subject, html: html.substring(0, 100) + "..." })
     return true
   }
 
