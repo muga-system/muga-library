@@ -2,7 +2,6 @@ import { NextResponse, type NextRequest } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 
 const AUTH_ONLY_PATHS = [
-  "/",
   "/libro",
   "/solicitar",
   "/mis-solicitudes",
@@ -19,6 +18,7 @@ const ADMIN_ONLY_PATHS = [
 ]
 
 const PUBLIC_PATHS = [
+  "/",
   "/iniciar-sesion",
   "/activar",
   "/solicitar-cupon",
