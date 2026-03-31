@@ -1,6 +1,6 @@
 const RESEND_API_KEY = process.env.RESEND_API_KEY
-const EMAIL_FROM = process.env.EMAIL_FROM || "MUGA <noreply@muga.dev>"
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://muga.dev"
+const EMAIL_FROM = process.env.EMAIL_FROM || "onboarding@resend.dev"
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://muga-library.vercel.app"
 
 interface SendEmailOptions {
   to: string
@@ -10,15 +10,15 @@ interface SendEmailOptions {
 }
 
 async function sendEmail({ to, subject, html, text }: SendEmailOptions): Promise<boolean> {
-  console.log("📧 [EMAIL] RESEND_API_KEY exists:", !!RESEND_API_KEY)
-  console.log("📧 [EMAIL] EMAIL_FROM:", EMAIL_FROM)
-  
   if (!RESEND_API_KEY) {
     console.log("📧 [EMAIL DEBUG - NO API KEY]", { to, subject, html: html.substring(0, 100) + "..." })
     return true
   }
 
   try {
+    const emailFrom = EMAIL_FROM || "onboarding@resend.dev"
+    console.log("📧 [EMAIL] Using from:", emailFrom)
+
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -26,7 +26,7 @@ async function sendEmail({ to, subject, html, text }: SendEmailOptions): Promise
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: EMAIL_FROM,
+        from: emailFrom,
         to,
         subject,
         html,
