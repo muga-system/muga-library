@@ -4,6 +4,9 @@ const RESEND_API_KEY = process.env.RESEND_API_KEY
 const EMAIL_FROM = process.env.EMAIL_FROM || "onboarding@resend.dev"
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://muga-library.vercel.app"
 
+console.log("📧 [INIT] RESEND_API_KEY exists:", !!RESEND_API_KEY)
+console.log("📧 [INIT] EMAIL_FROM:", EMAIL_FROM)
+
 const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null
 
 interface SendEmailOptions {
@@ -14,8 +17,11 @@ interface SendEmailOptions {
 }
 
 async function sendEmail({ to, subject, html, text }: SendEmailOptions): Promise<boolean> {
+  console.log("📧 [SEND] RESEND_API_KEY:", RESEND_API_KEY ? "present" : "MISSING")
+  console.log("📧 [SEND] resend instance:", resend ? "exists" : "null")
+  
   if (!resend) {
-    console.log("📧 [EMAIL DEBUG - NO API KEY]", { to, subject, html: html.substring(0, 100) + "..." })
+    console.log("📧 [EMAIL DEBUG - NO RESEND]", { to, subject })
     return true
   }
 
