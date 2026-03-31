@@ -25,7 +25,15 @@ ALTER TABLE public.loans
   CHECK (status IN ('requested', 'active', 'returned', 'rejected', 'overdue'));
 
 CREATE INDEX IF NOT EXISTS idx_loans_status_created_at ON public.loans(status, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_loans_created_by_record_status ON public.loans(created_by, record_id, status);
+
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'loans' AND column_name = 'created_by') THEN
+    CREATE INDEX IF NOT EXISTS idx_loans_created_by_record_status ON public.loans(created_by, record_id, status);
+  END IF;
+EXCEPTION WHEN duplicate_table THEN
+  NULL;
+END $$;
 
 CREATE OR REPLACE FUNCTION update_record_copies_on_loan_status()
 RETURNS TRIGGER AS $$
