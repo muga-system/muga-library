@@ -18,6 +18,14 @@ const ADMIN_ONLY_PATHS = [
   "/prestamos",
 ]
 
+const PUBLIC_PATHS = [
+  "/iniciar-sesion",
+  "/activar",
+  "/solicitar-cupon",
+  "/explorar",
+  "/registro",
+]
+
 function startsWithPath(pathname: string, basePath: string) {
   return pathname === basePath || pathname.startsWith(`${basePath}/`)
 }
@@ -30,6 +38,10 @@ function isAdminOnlyPath(pathname: string) {
   return ADMIN_ONLY_PATHS.some((path) => startsWithPath(pathname, path))
 }
 
+function isPublicPath(pathname: string) {
+  return PUBLIC_PATHS.some((path) => startsWithPath(pathname, path))
+}
+
 function isAdmin(user: { app_metadata?: any; user_metadata?: any }) {
   const appRole = String(user?.app_metadata?.role || "").toLowerCase()
   const userRole = String(user?.user_metadata?.role || "").toLowerCase()
@@ -40,7 +52,11 @@ export async function middleware(request: NextRequest) {
   const response = NextResponse.next({ request: { headers: request.headers } })
   const pathname = request.nextUrl.pathname
 
-  if (!isAuthOnlyPath(pathname) && !isAdminOnlyPath(pathname) && pathname !== "/iniciar-sesion") {
+  if (isPublicPath(pathname)) {
+    return response
+  }
+
+  if (!isAuthOnlyPath(pathname) && !isAdminOnlyPath(pathname)) {
     return response
   }
 
@@ -98,6 +114,10 @@ export const config = {
   matcher: [
     "/",
     "/iniciar-sesion",
+    "/activar",
+    "/solicitar-cupon",
+    "/explorar",
+    "/registro",
     "/admin/:path*",
     "/libro/:path*",
     "/solicitar/:path*",
