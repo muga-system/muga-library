@@ -9,8 +9,8 @@ import { signInWithEmail } from "@/lib/supabase/auth"
 export default function IniciarSesionPage() {
   const router = useRouter()
   const [nextPath, setNextPath] = useState("")
-  const [email, setEmail] = useState("demo@biblioteca.org")
-  const [password, setPassword] = useState("demo123")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
