@@ -20,8 +20,6 @@ function toGoogleBooksQuery(title: string, author: string, isbn: string) {
   return parts.join("+")
 }
 
-const DEFAULT_BOOK_ICON = "https://openlibrary.org/images/icons/avatar_book-sm.png"
-
 async function canUseImageUrl(url: string): Promise<boolean> {
   try {
     const res = await fetch(url, {
@@ -40,11 +38,12 @@ async function canUseImageUrl(url: string): Promise<boolean> {
 function fallbackSvgResponse() {
   const svg = `
 <svg xmlns="http://www.w3.org/2000/svg" width="480" height="640" viewBox="0 0 480 640" fill="none">
-  <rect width="480" height="640" rx="20" fill="#E2E8F0"/>
-  <rect x="60" y="80" width="360" height="480" rx="16" fill="#CBD5E1"/>
-  <path d="M165 278C165 266.954 173.954 258 185 258H295C306.046 258 315 266.954 315 278V362C315 373.046 306.046 382 295 382H185C173.954 382 165 373.046 165 362V278Z" fill="#94A3B8"/>
-  <path d="M209 258V382" stroke="#E2E8F0" stroke-width="10"/>
-  <text x="240" y="450" text-anchor="middle" fill="#64748B" font-family="Arial, sans-serif" font-size="20">Sin portada</text>
+  <rect width="480" height="640" rx="20" fill="#020617"/>
+  <rect x="48" y="48" width="384" height="544" rx="18" fill="#0F172A" stroke="#334155" stroke-width="4"/>
+  <path d="M165 246C165 234.954 173.954 226 185 226H295C306.046 226 315 234.954 315 246V350C315 361.046 306.046 370 295 370H185C173.954 370 165 361.046 165 350V246Z" fill="#1E293B"/>
+  <path d="M209 226V370" stroke="#475569" stroke-width="10"/>
+  <path d="M189 414H291" stroke="#14B8A6" stroke-width="8" stroke-linecap="round"/>
+  <text x="240" y="470" text-anchor="middle" fill="#94A3B8" font-family="Arial, sans-serif" font-size="20">SIN PORTADA</text>
 </svg>`.trim()
 
   return new NextResponse(svg, {
@@ -144,16 +143,6 @@ export async function GET(request: Request) {
     }
   } catch {
     // ignore and fallback below
-  }
-
-  const validDefault = await canUseImageUrl(DEFAULT_BOOK_ICON)
-  if (validDefault) {
-    return NextResponse.redirect(DEFAULT_BOOK_ICON, {
-      status: 302,
-      headers: {
-        "cache-control": "public, max-age=86400, s-maxage=86400",
-      },
-    })
   }
 
   return fallbackSvgResponse()

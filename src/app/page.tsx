@@ -1,123 +1,199 @@
 import Link from "next/link"
-import { Library, KeyRound, Search, BookOpen, Mail } from "lucide-react"
+import {
+  ArrowRight,
+  BookOpen,
+  CheckCircle2,
+  CircleUserRound,
+  FileUp,
+  KeyRound,
+  Library,
+  Search,
+  Users,
+} from "lucide-react"
+import { MugaHeader } from "@/components/muga-header"
 
-export default async function PublicLibraryHome() {
+const capabilities = [
+  {
+    icon: BookOpen,
+    title: "Catálogos y registros",
+    description: "Organizá colecciones, ejemplares y datos bibliográficos desde un mismo espacio.",
+  },
+  {
+    icon: FileUp,
+    title: "Importación de datos",
+    description: "Incorporá catálogos existentes desde planillas y formatos bibliotecarios.",
+  },
+  {
+    icon: CircleUserRound,
+    title: "Préstamos y usuarios",
+    description: "Gestioná solicitudes, entregas, devoluciones y disponibilidad de ejemplares.",
+  },
+]
+
+const incorporationSteps = [
+  ["1", "Solicitá acceso", "Contanos qué biblioteca querés incorporar."],
+  ["2", "Activá la biblioteca", "Recibirás un código para crear su espacio."],
+  ["3", "Configurá y cargá", "Importá el catálogo y definí qué querés publicar."],
+]
+
+const libraryFlow = [
+  {
+    number: "01",
+    icon: Library,
+    title: "Ordená la colección",
+    description: "Catálogos, registros y ejemplares con una estructura clara.",
+  },
+  {
+    number: "02",
+    icon: CircleUserRound,
+    title: "Gestioná el día a día",
+    description: "Personas, préstamos, solicitudes y devoluciones en un mismo lugar.",
+  },
+  {
+    number: "03",
+    icon: Users,
+    title: "Compartí con criterio",
+    description: "Cada biblioteca decide qué parte de su catálogo abre a la comunidad.",
+  },
+]
+
+export default function PublicLibraryHome() {
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950">
-      <header className="border-b border-slate-200 dark:border-slate-800">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-900">
-              <Library className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-base font-semibold text-slate-900 dark:text-slate-100">MUGA</h1>
-              <p className="text-xs text-slate-500">Sistema de Gestión Bibliotecaria</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Link href="/iniciar-sesion" className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
-              Iniciar sesión
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-4xl px-6 py-16">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-slate-900 dark:text-slate-100 mb-4">
-            Gestión Bibliotecaria<span className="text-teal-600">MUGA</span>
-          </h2>
-          <p className="text-lg text-slate-600 dark:text-slate-400">
-            Sistema integral para administrar bibliotecas, catálogos y préstamos
-          </p>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
-          {/* Login Card */}
-          <div className="bg-slate-50 dark:bg-slate-900 rounded-2xl p-8 border border-slate-200 dark:border-slate-800">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-slate-900 rounded-lg flex items-center justify-center">
-                <KeyRound className="h-5 w-5 text-white" />
-              </div>
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                Ya tengo credenciales
-              </h3>
-            </div>
-            <p className="text-slate-600 dark:text-slate-400 mb-6 text-sm">
-              Si ya tienes un usuario y contraseña, ingresa al panel de administración de tu biblioteca.
-            </p>
-            <Link
-              href="/iniciar-sesion"
-              className="block w-full py-3 text-center bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800 transition-colors"
-            >
-              Iniciar Sesión
-            </Link>
-          </div>
-
-          {/* Activation Card */}
-          <div className="bg-teal-50 dark:bg-teal-950/20 rounded-2xl p-8 border border-teal-200 dark:border-teal-800">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-teal-600 rounded-lg flex items-center justify-center">
-                <Library className="h-5 w-5 text-white" />
-              </div>
-              <h3 className="text-lg font-semibold text-teal-900 dark:text-teal-100">
-                Activar mi biblioteca
-              </h3>
-            </div>
-            <p className="text-teal-700 dark:text-teal-300 mb-6 text-sm">
-              ¿Tienes un código de activación? Ingrésalo para crear tu biblioteca y comenzar a gestionar tu catálogo.
-            </p>
-            <Link
-              href="/activar"
-              className="block w-full py-3 text-center bg-teal-600 text-white rounded-lg font-medium hover:bg-teal-700 transition-colors"
-            >
-              Activar con Cupón
-            </Link>
-          </div>
-        </div>
-
-        {/* Community Section */}
-        <div className="mt-16 pt-8 border-t border-slate-200 dark:border-slate-800">
-          <div className="text-center mb-8">
-            <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-2">
-              Explora la comunidad
-            </h3>
-            <p className="text-slate-600 dark:text-slate-400">
-              Descubre catálogos de otras bibliotecas
-            </p>
-          </div>
-          <div className="flex justify-center">
-            <Link
-              href="/explorar"
-              className="inline-flex items-center gap-2 px-6 py-3 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-            >
-              <Search className="h-4 w-4" />
-              Explorar Catálogos
-            </Link>
-          </div>
-        </div>
-
-        {/* Request Coupon */}
-        <div className="mt-12 text-center">
-          <p className="text-slate-600 dark:text-slate-400 mb-4">
-            ¿No tienes un código de activación?
-          </p>
-          <Link
-            href="/solicitar-cupon"
-            className="inline-flex items-center gap-2 text-teal-600 hover:text-teal-700 font-medium"
-          >
-            <Mail className="h-4 w-4" />
-            Solicitar un cupón
+      <MugaHeader
+        navigation={
+          <>
+            <Link href="#funciones" className="hover:text-slate-900 dark:hover:text-slate-200">Funciones</Link>
+            <Link href="#como-usar" className="hover:text-slate-900 dark:hover:text-slate-200">Cómo usarlo</Link>
+            <Link href="/catalogo" className="hover:text-slate-900 dark:hover:text-slate-200">Catálogo público</Link>
+          </>
+        }
+        actions={
+          <Link href="/iniciar-sesion" className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+            <KeyRound className="h-4 w-4" />
+            Iniciar sesión
           </Link>
-        </div>
-      </main>
+        }
+      />
 
-      <footer className="border-t border-slate-200 dark:border-slate-800 py-8">
-        <div className="mx-auto max-w-6xl px-6 text-center text-sm text-slate-500">
-          © {new Date().getFullYear()} MUGA - Sistema de Gestión Bibliotecaria
-        </div>
-      </footer>
+      <main className="mx-auto max-w-6xl px-6 py-14 md:py-16">
+        <section className="mb-24">
+          <div className="max-w-4xl pt-2 md:pt-6">
+            <p className="mb-4 text-sm font-medium text-teal-700 dark:text-teal-400">Gestión bibliotecaria compartida</p>
+            <h1 className="max-w-3xl text-4xl font-semibold leading-[1.08] tracking-tight text-slate-900 dark:text-slate-100 sm:text-5xl lg:text-[3.5rem]">
+              Una biblioteca viva necesita algo más que un catálogo.
+            </h1>
+            <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-600 dark:text-slate-400">
+              MUGA organiza todo lo que sucede alrededor de una colección: registros, personas, préstamos y decisiones de publicación. Cada biblioteca administra su espacio; la comunidad descubre lo que decide compartir.
+            </p>
+            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+              <Link href="/catalogo" className="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800">
+                <Search className="h-4 w-4" />
+                Explorar catálogos
+              </Link>
+              <Link href="/solicitar-cupon" className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+                Incorporar mi biblioteca
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </div>
+
+          <div className="mt-16 overflow-hidden rounded-xl border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900">
+            <div className="grid md:grid-cols-3">
+              {libraryFlow.map(({ number, icon: Icon, title, description }, index) => (
+                <div key={number} className={`p-6 md:p-7 ${index > 0 ? "border-t border-slate-200 dark:border-slate-800 md:border-l md:border-t-0" : ""}`}>
+                  <div className="mb-5 flex items-center justify-between">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-900 dark:bg-slate-800">
+                      <Icon className="h-4 w-4 text-white" />
+                    </div>
+                    <span className="text-xs font-medium text-slate-400">{number}</span>
+                  </div>
+                  <h2 className="font-medium text-slate-900 dark:text-slate-100">{title}</h2>
+                  <p className="mt-2 max-w-xs text-sm leading-6 text-slate-500">{description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section id="funciones" className="mb-20">
+          <div className="mb-7">
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Qué podés hacer</h2>
+            <p className="mt-1 text-sm text-slate-500">Las herramientas principales para trabajar con una biblioteca.</p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            {capabilities.map(({ icon: Icon, title, description }) => (
+              <article key={title} className="rounded-xl border border-slate-200 bg-slate-50 p-6 dark:border-slate-800 dark:bg-slate-900">
+                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-slate-900">
+                  <Icon className="h-5 w-5 text-white" />
+                </div>
+                <h3 className="font-medium text-slate-900 dark:text-slate-100">{title}</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-500">{description}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section id="como-usar" className="mb-20">
+          <div className="mb-7">
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Cómo usar el sitio</h2>
+            <p className="mt-1 text-sm text-slate-500">Elegí el recorrido que corresponde a lo que necesitás hacer.</p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <article className="rounded-xl border border-slate-200 bg-slate-50 p-6 dark:border-slate-800 dark:bg-slate-900">
+              <div className="mb-4 flex items-center justify-between">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-900"><Search className="h-5 w-5 text-white" /></div>
+                <span className="rounded-md bg-slate-200 px-2 py-1 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">Acceso abierto</span>
+              </div>
+              <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100">Quiero encontrar un libro</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-500">Buscá por título, autor o ISBN en los catálogos que las bibliotecas decidieron publicar. No necesitás iniciar sesión.</p>
+              <Link href="/catalogo" className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">Ir al catálogo <ArrowRight className="h-4 w-4" /></Link>
+            </article>
+
+            <article className="rounded-xl border border-slate-200 bg-slate-50 p-6 dark:border-slate-800 dark:bg-slate-900">
+              <div className="mb-4 flex items-center justify-between">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-900"><Users className="h-5 w-5 text-white" /></div>
+                <span className="rounded-md bg-slate-200 px-2 py-1 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">Equipo bibliotecario</span>
+              </div>
+              <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100">Quiero gestionar una biblioteca</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-500">Ingresá con la cuenta vinculada a tu biblioteca para administrar sus catálogos, préstamos y preferencias.</p>
+              <Link href="/iniciar-sesion" className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">Entrar al panel <ArrowRight className="h-4 w-4" /></Link>
+            </article>
+          </div>
+        </section>
+
+        <section className="mb-20 rounded-xl border border-slate-200 bg-slate-50 p-7 dark:border-slate-800 dark:bg-slate-900 md:p-9">
+          <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
+            <div className="max-w-md">
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Incorporar una biblioteca</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                El código de activación es una invitación para crear el espacio de trabajo. No es un cupón de compra ni un medio de pago.
+              </p>
+              <div className="mt-5 flex flex-wrap gap-3">
+                <Link href="/solicitar-cupon" className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800">Solicitar incorporación <ArrowRight className="h-4 w-4" /></Link>
+                <Link href="/activar" className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm text-slate-700 hover:bg-white dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-950">Ya tengo un código</Link>
+              </div>
+            </div>
+            <div className="grid flex-1 gap-3 md:grid-cols-3 lg:max-w-2xl">
+              {incorporationSteps.map(([number, title, description]) => (
+                <div key={number} className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-950">
+                  <div className="mb-3 flex h-7 w-7 items-center justify-center rounded-full bg-slate-900 text-xs font-medium text-white">{number}</div>
+                  <h3 className="text-sm font-medium text-slate-900 dark:text-slate-100">{title}</h3>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">{description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="flex flex-col gap-5 border-t border-slate-200 pt-8 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
+          <div className="max-w-2xl">
+            <div className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-900 dark:text-slate-100"><CheckCircle2 className="h-4 w-4 text-teal-600" /> Un proyecto abierto y comunitario</div>
+            <p className="text-sm leading-6 text-slate-500">Cada biblioteca conserva el control de sus datos. La comunidad accede únicamente a los catálogos que sus responsables deciden publicar.</p>
+          </div>
+          <Link href="/catalogo" className="inline-flex shrink-0 items-center gap-2 text-sm font-medium text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">Conocer los catálogos <ArrowRight className="h-4 w-4" /></Link>
+        </section>
+      </main>
     </div>
   )
 }

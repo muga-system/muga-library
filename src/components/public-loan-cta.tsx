@@ -17,16 +17,18 @@ export function PublicLoanCta({
 }) {
   if (isAuthenticated && userLoanStatus === "requested") {
     return (
-      <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-700 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-300">
-        Tu solicitud está pendiente de aprobación.
+      <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-300">
+        <p>Tu solicitud está pendiente de aprobación.</p>
+        <Link href="/mis-solicitudes" className="mt-1 inline-flex font-medium underline underline-offset-4">Ver mis préstamos</Link>
       </div>
     )
   }
 
   if (isAuthenticated && (userLoanStatus === "active" || userLoanStatus === "overdue")) {
     return (
-      <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-700 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-300">
-        Ya tienes un préstamo activo de este libro.
+      <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
+        <p>Ya tenés un préstamo activo de este libro.</p>
+        <Link href="/mis-solicitudes" className="mt-1 inline-flex font-medium underline underline-offset-4">Consultar fechas y estado</Link>
       </div>
     )
   }

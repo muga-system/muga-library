@@ -1,6 +1,7 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { BookOpen } from "lucide-react"
+import { useState } from "react"
 
 export function BookCoverImage({
   src,
@@ -10,24 +11,23 @@ export function BookCoverImage({
 }: {
   src: string
   alt: string
-  fallbackSrc: string
+  fallbackSrc?: string
   className?: string
 }) {
   const [currentSrc, setCurrentSrc] = useState(src || fallbackSrc)
   const [failedPrimary, setFailedPrimary] = useState(false)
+  const [showFallback, setShowFallback] = useState(!src && !fallbackSrc)
 
-  const finalFallback = useMemo(() => {
+  if (showFallback) {
     return (
-      "data:image/svg+xml;utf8," +
-      encodeURIComponent(
-        `<svg xmlns='http://www.w3.org/2000/svg' width='480' height='640' viewBox='0 0 480 640'>` +
-          `<rect width='480' height='640' rx='20' fill='#E2E8F0'/>` +
-          `<rect x='60' y='80' width='360' height='480' rx='16' fill='#CBD5E1'/>` +
-          `<text x='240' y='450' text-anchor='middle' fill='#64748B' font-family='Arial, sans-serif' font-size='20'>Sin portada</text>` +
-        `</svg>`,
-      )
+      <div className={`flex flex-col items-center justify-center gap-3 bg-slate-50 text-slate-500 ${className || ""} dark:bg-slate-900 dark:text-slate-400`} role="img" aria-label={alt}>
+        <div className="rounded-full border border-slate-300 bg-slate-100 p-3 dark:border-slate-700 dark:bg-slate-800">
+          <BookOpen className="h-8 w-8" />
+        </div>
+        <span className="px-3 text-center text-xs font-medium uppercase tracking-wider">Sin portada</span>
+      </div>
     )
-  }, [])
+  }
 
   return (
     // eslint-disable-next-line @next/next/no-img-element
@@ -36,13 +36,14 @@ export function BookCoverImage({
       alt={alt}
       className={className}
       loading="lazy"
+      decoding="async"
       onError={() => {
         if (!failedPrimary && fallbackSrc && currentSrc !== fallbackSrc) {
           setFailedPrimary(true)
           setCurrentSrc(fallbackSrc)
           return
         }
-        setCurrentSrc(finalFallback)
+        setShowFallback(true)
       }}
     />
   )

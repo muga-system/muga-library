@@ -145,9 +145,9 @@ export default async function ExplorePage({
 
         <div className="mt-12 pt-8 border-t border-slate-200 dark:border-slate-800 text-center">
           <p className="text-slate-500">
-            ¿Tienes una biblioteca?{" "}
+            ¿Trabajás en una biblioteca?{" "}
             <Link href="/solicitar-cupon" className="text-teal-600 hover:text-teal-700 font-medium">
-              Solicita tu código de activación
+              Solicitar incorporación
             </Link>
           </p>
         </div>

@@ -7,17 +7,17 @@ import { useNotifications } from "@/components/notifications-provider"
 export function PublicLoanForm({
   recordId,
   databaseId,
-  initialName,
+  accountEmail,
 }: {
   recordId: string
   databaseId: string
-  initialName: string
+  accountEmail: string
 }) {
   const router = useRouter()
   const notifications = useNotifications()
   const [loading, setLoading] = useState(false)
-  const [borrowerType, setBorrowerType] = useState<"student" | "teacher">("student")
-  const [borrowerName, setBorrowerName] = useState(initialName)
+  const [borrowerType, setBorrowerType] = useState<"reader" | "student" | "teacher">("reader")
+  const [borrowerName, setBorrowerName] = useState("")
   const [borrowerCourse, setBorrowerCourse] = useState("")
   const [borrowerDivision, setBorrowerDivision] = useState("")
   const [borrowerDepartment, setBorrowerDepartment] = useState("")
@@ -52,7 +52,7 @@ export function PublicLoanForm({
       }
 
       notifications.success("Préstamo solicitado", "Tu solicitud fue registrada correctamente.")
-      router.push(`/?solicitud=ok`)
+      router.push(`/libro/${recordId}?solicitud=ok`)
       router.refresh()
     } catch (error) {
       notifications.error("No se pudo solicitar el préstamo", (error as Error)?.message || "Intenta nuevamente.")
@@ -62,8 +62,13 @@ export function PublicLoanForm({
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
+      <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm dark:border-slate-700 dark:bg-slate-950">
+        <p className="text-xs text-slate-500">Cuenta que realiza la solicitud</p>
+        <p className="mt-0.5 font-medium text-slate-800 dark:text-slate-200">{accountEmail}</p>
+      </div>
+
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-200">Nombre</label>
+        <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-200">Nombre y apellido</label>
         <input
           required
           value={borrowerName}
@@ -73,10 +78,11 @@ export function PublicLoanForm({
       </div>
 
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-200">Tipo de prestatario</label>
-        <div className="flex items-center gap-4 text-sm">
-          <label className="inline-flex items-center gap-2"><input type="radio" checked={borrowerType === "student"} onChange={() => setBorrowerType("student")} /> Alumno</label>
-          <label className="inline-flex items-center gap-2"><input type="radio" checked={borrowerType === "teacher"} onChange={() => setBorrowerType("teacher")} /> Profesor</label>
+        <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-200">Relación con la biblioteca</label>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+          <label className="inline-flex items-center gap-2"><input type="radio" checked={borrowerType === "reader"} onChange={() => setBorrowerType("reader")} /> Lector/a</label>
+          <label className="inline-flex items-center gap-2"><input type="radio" checked={borrowerType === "student"} onChange={() => setBorrowerType("student")} /> Estudiante</label>
+          <label className="inline-flex items-center gap-2"><input type="radio" checked={borrowerType === "teacher"} onChange={() => setBorrowerType("teacher")} /> Docente</label>
         </div>
       </div>
 
@@ -91,12 +97,12 @@ export function PublicLoanForm({
             <input value={borrowerDivision} onChange={(e) => setBorrowerDivision(e.target.value)} className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" />
           </div>
         </div>
-      ) : (
+      ) : borrowerType === "teacher" ? (
         <div>
           <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-200">Departamento</label>
           <input value={borrowerDepartment} onChange={(e) => setBorrowerDepartment(e.target.value)} className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" />
         </div>
-      )}
+      ) : null}
 
       <div>
         <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-200">Observaciones (opcional)</label>
