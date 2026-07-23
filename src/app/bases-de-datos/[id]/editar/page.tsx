@@ -37,8 +37,8 @@ export default function EditarBaseDeDatosPage({ params }: Props) {
       const data = await res.json()
       if (data) {
         setFormData({
-          name: data.name,
-          description: data.description || "",
+          name: data.name ?? "",
+          description: data.description ?? "",
         })
       }
     } catch (error) {
@@ -97,7 +97,7 @@ export default function EditarBaseDeDatosPage({ params }: Props) {
   return (
     <div className="min-h-screen bg-white">
       <header className="border-b border-slate-200">
-        <div className="max-w-2xl mx-auto px-6 py-4">
+        <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="flex items-center gap-4">
             <Link href="/bases-de-datos" className="p-2 -ml-2 hover:bg-slate-50 rounded-lg transition-colors">
               <ArrowLeft className="h-5 w-5 text-slate-500" />
@@ -110,7 +110,7 @@ export default function EditarBaseDeDatosPage({ params }: Props) {
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-6 py-12">
+      <main className="max-w-6xl mx-auto px-6 py-12">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="bg-slate-50 rounded-xl border border-slate-200 p-6">
             <h3 className="font-medium text-slate-900 mb-4 flex items-center gap-2">
@@ -126,7 +126,7 @@ export default function EditarBaseDeDatosPage({ params }: Props) {
                 <input
                   type="text"
                   required
-                  value={formData.name}
+                  value={formData.name ?? ""}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="w-full px-3 py-2.5 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent"
                   placeholder="Nombre del catálogo"
@@ -139,7 +139,7 @@ export default function EditarBaseDeDatosPage({ params }: Props) {
                 </label>
                 <textarea
                   rows={3}
-                  value={formData.description}
+                  value={formData.description ?? ""}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   className="w-full px-3 py-2.5 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent resize-none"
                   placeholder="Descripción opcional del catálogo..."

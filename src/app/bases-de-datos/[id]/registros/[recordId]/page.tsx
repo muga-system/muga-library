@@ -18,11 +18,15 @@ export default async function DetalleRegistroPage({ params }: { params: Promise<
   }
 
   const data = record.data as Record<string, string>
+  const createdDate = record.createdAt ? new Date(record.createdAt) : null
+  const createdLabel = createdDate && !Number.isNaN(createdDate.getTime())
+    ? createdDate.toLocaleString("es-ES")
+    : "—"
 
   return (
     <div className="min-h-screen bg-white">
       <header className="border-b border-slate-200">
-        <div className="max-w-4xl mx-auto px-6 py-4">
+        <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link href={`/bases-de-datos/${databaseId}`} className="p-2 -ml-2 hover:bg-slate-100 rounded-lg transition-colors">
@@ -43,7 +47,7 @@ export default async function DetalleRegistroPage({ params }: { params: Promise<
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-6 py-8">
+      <main className="max-w-6xl mx-auto px-6 py-8">
         <div className="bg-white rounded-xl border border-slate-200 p-6 mb-6">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -199,7 +203,7 @@ export default async function DetalleRegistroPage({ params }: { params: Promise<
         <div className="mt-6 p-4 bg-slate-100 rounded-lg border border-slate-200">
           <div className="flex items-center justify-between text-xs text-slate-500">
             <span>ID: {record.id}</span>
-            <span>Creado: {record.createdAt ? new Date(record.createdAt).toLocaleString("es-ES") : "—"}</span>
+            <span>Creado: {createdLabel}</span>
           </div>
         </div>
 

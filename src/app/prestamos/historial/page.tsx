@@ -135,6 +135,7 @@ export default function HistorialPrestamosPage() {
                 className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
               >
                 <option value="todos">Todos los tipos</option>
+                <option value="reader">Lectores</option>
                 <option value="student">Alumnos</option>
                 <option value="teacher">Profesores</option>
               </select>
@@ -179,9 +180,9 @@ export default function HistorialPrestamosPage() {
                             <User className="h-3 w-3" />
                             {prestamo.borrowerCourse}{prestamo.borrowerDivision}
                           </span>
-                        ) : (
+                        ) : prestamo.borrowerType === "teacher" ? (
                           <span className="text-blue-600 dark:text-slate-200">{prestamo.borrowerDepartment || "Profesor"}</span>
-                        )}
+                        ) : <span>Lector/a</span>}
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-500">
                         {new Date(prestamo.loanDate).toLocaleDateString("es-ES")}

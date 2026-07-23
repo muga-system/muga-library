@@ -62,7 +62,7 @@ export default async function DetallePrestamoPage({ params }: { params: Promise<
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950">
       <header className="border-b border-slate-200 dark:border-slate-800">
-        <div className="max-w-2xl mx-auto px-6 py-4">
+        <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link href="/prestamos" className="rounded-lg p-2 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800">
@@ -80,7 +80,7 @@ export default async function DetallePrestamoPage({ params }: { params: Promise<
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-6 py-12">
+      <main className="max-w-6xl mx-auto px-6 py-12">
         {/* Estado */}
         <div className={`mb-6 rounded-xl border p-4 ${statusConfig.container}`}>
           <div className="flex items-center gap-3">

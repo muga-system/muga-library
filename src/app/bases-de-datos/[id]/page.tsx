@@ -1,8 +1,9 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { ArrowLeft, Plus, Search, Database, FileText, Pencil } from "lucide-react"
-import { getDatabaseBySlug, getDatabaseById, getRecordsByDatabase } from "@/lib/services/database"
+import { ArrowLeft, Plus, Search, Database, FileText, Pencil, Grid2X2, List } from "lucide-react"
+import { getDatabaseBySlug, getDatabaseById, getRecordsByDatabase, searchRecords, countSearchRecords } from "@/lib/services/database"
 import { RecordsTable } from "./records-table"
+import { CatalogCards } from "./catalog-cards"
 
 function normalizeRecordData(data: unknown): Record<string, unknown> {
   if (typeof data && typeof data === "object") {
@@ -16,11 +17,12 @@ export default async function DatabaseDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ page?: string }>
+  searchParams: Promise<{ page?: string; q?: string; view?: string }>
 }) {
   const { id } = await params
-  const { page } = await searchParams
-  const pageSize = 50
+  const { page, q, view } = await searchParams
+  const gallery = view !== "table"
+  const pageSize = gallery ? 20 : 50
   const currentPage = Math.max(1, parseInt(page || '1', 10))
   const offset = (currentPage - 1) * pageSize
 
@@ -36,7 +38,21 @@ export default async function DatabaseDetailPage({
     notFound()
   }
 
-  const { records, total } = await getRecordsByDatabase(database.id, { limit: pageSize, offset })
+  const query = q?.trim() || ""
+  const searchResult = query ? await searchRecords(query, database.id, { limit: pageSize, offset }) : null
+  const result = searchResult
+    ? { records: searchResult, total: await countSearchRecords(query, database.id) }
+    : await getRecordsByDatabase(database.id, { limit: pageSize, offset })
+  const { records, total } = result
+  const pageCount = Math.max(1, Math.ceil(total / pageSize))
+  const pageHref = (nextPage: number) => {
+    const params = new URLSearchParams()
+    if (query) params.set("q", query)
+    if (nextPage > 1) params.set("page", String(nextPage))
+    if (!gallery) params.set("view", "table")
+    const suffix = params.toString()
+    return `/bases-de-datos/${database.id}${suffix ? `?${suffix}` : ""}`
+  }
   const normalizedRecords = records.map((record) => ({
     ...record,
     data: normalizeRecordData(record.data),
@@ -89,13 +105,25 @@ export default async function DatabaseDetailPage({
         )}
 
         <div className="mb-10">
-          <div className="flex items-center justify-between mb-4">
+          <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <h2 className="text-lg font-medium text-slate-900">Registros</h2>
-            <Link href="/buscar" className="text-sm text-slate-500 hover:text-slate-700 flex items-center gap-1">
-              <Search className="h-4 w-4" />
-              Busqueda avanzada
-            </Link>
+            <div className="flex flex-wrap items-center gap-2">
+              <form action={`/bases-de-datos/${database.id}`} className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input name="q" defaultValue={query} placeholder="Buscar título, autor o ISBN" className="w-full rounded-lg border border-slate-300 py-2 pl-9 pr-3 text-sm text-slate-900 outline-none focus:border-teal-500 sm:w-72" />
+                {view === "table" ? <input type="hidden" name="view" value="table" /> : null}
+              </form>
+              <Link href={`/bases-de-datos/${database.id}?${new URLSearchParams({ ...(query ? { q: query } : {}), view: "cards" })}`} className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm ${gallery ? "border-slate-900 bg-slate-900 text-white" : "border-slate-300 text-slate-600 hover:bg-slate-50"}`}>
+                <Grid2X2 className="h-4 w-4" /> Galería
+              </Link>
+              <Link href={`/bases-de-datos/${database.id}?${new URLSearchParams({ ...(query ? { q: query } : {}), view: "table" })}`} className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm ${!gallery ? "border-slate-900 bg-slate-900 text-white" : "border-slate-300 text-slate-600 hover:bg-slate-50"}`}>
+                <List className="h-4 w-4" /> Tabla
+              </Link>
+              <Link href="/buscar" className="text-sm text-slate-500 hover:text-slate-700">Búsqueda avanzada</Link>
+            </div>
           </div>
+
+          {query ? <p className="mb-4 text-sm text-slate-500">{total} resultado{total === 1 ? "" : "s"} para “{query}”</p> : null}
 
           {normalizedRecords.length === 0 ? (
             <div className="bg-slate-50 rounded-xl border border-dashed border-slate-300 p-12 text-center">
@@ -105,6 +133,8 @@ export default async function DatabaseDetailPage({
                 Agregar primer registro →
               </Link>
             </div>
+          ) : gallery ? (
+            <CatalogCards records={normalizedRecords} databaseId={database.id} />
           ) : (
             <RecordsTable 
               records={normalizedRecords} 
@@ -115,6 +145,15 @@ export default async function DatabaseDetailPage({
               pageSize={pageSize}
             />
           )}
+          {total > 0 && pageCount > 1 ? (
+            <nav className="mt-6 flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm" aria-label="Paginación del catálogo">
+              <span className="text-slate-500">Página {currentPage} de {pageCount}</span>
+              <div className="flex items-center gap-2">
+                {currentPage > 1 ? <Link href={pageHref(currentPage - 1)} className="rounded-lg border border-slate-300 px-3 py-2 text-slate-700 hover:bg-slate-50">Anterior</Link> : <span className="rounded-lg border border-slate-200 px-3 py-2 text-slate-400">Anterior</span>}
+                {currentPage < pageCount ? <Link href={pageHref(currentPage + 1)} className="rounded-lg bg-slate-900 px-3 py-2 text-white hover:bg-slate-800">Siguiente</Link> : <span className="rounded-lg border border-slate-200 px-3 py-2 text-slate-400">Siguiente</span>}
+              </div>
+            </nav>
+          ) : null}
         </div>
       </main>
     </div>

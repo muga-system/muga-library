@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { ArrowLeft, Save, BookOpen, FileText, Building2, Tag, Hash, Trash2, AlertTriangle, Upload } from "lucide-react"
 import { useNotifications } from "@/components/notifications-provider"
 import { useConfirm } from "@/components/confirm-provider"
-import { createClient } from "@/lib/supabase/client"
+import { uploadImage } from "@/lib/uploads/client"
 
 interface Props {
   params: Promise<{ id: string; recordId: string }>
@@ -16,7 +16,6 @@ export default function EditarRegistroPage({ params }: Props) {
   const router = useRouter()
   const notifications = useNotifications()
   const { confirm } = useConfirm()
-  const supabase = createClient()
   const [loading, setLoading] = useState(false)
   const [eliminando, setEliminando] = useState(false)
   const [uploadingCover, setUploadingCover] = useState(false)
@@ -85,28 +84,8 @@ export default function EditarRegistroPage({ params }: Props) {
 
     setUploadingCover(true)
     try {
-      const extension = file.name.split(".").pop() || "jpg"
-      const path = `${databaseId || "catalogo"}/${recordId || Date.now()}.${extension}`
-
-      let uploadResult = await supabase.storage
-        .from("book-covers")
-        .upload(path, file, { upsert: true })
-
-      if (uploadResult.error?.message?.toLowerCase().includes("bucket not found")) {
-        const ensureBucket = await fetch('/api/storage/book-covers-bucket', { method: 'POST' })
-        if (ensureBucket.ok) {
-          uploadResult = await supabase.storage
-            .from("book-covers")
-            .upload(path, file, { upsert: true })
-        }
-      }
-
-      if (uploadResult.error) throw uploadResult.error
-
-      const { data } = supabase.storage.from("book-covers").getPublicUrl(path)
-      if (!data?.publicUrl) throw new Error("No se pudo obtener URL")
-
-      setFormData((prev) => ({ ...prev, cover_url: data.publicUrl }))
+      const url = await uploadImage(file, "cover")
+      setFormData((prev) => ({ ...prev, cover_url: url }))
       notifications.success("Portada cargada", "Guarda cambios para aplicar la nueva portada.")
     } catch (error) {
       notifications.error("No se pudo subir la portada", "Verifica bucket y permisos de Storage.")
@@ -178,7 +157,7 @@ export default function EditarRegistroPage({ params }: Props) {
   return (
     <div className="min-h-screen bg-white">
       <header className="border-b border-slate-200">
-        <div className="max-w-4xl mx-auto px-6 py-4">
+        <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="flex items-center gap-4">
             <Link href={`/bases-de-datos/${databaseId}`} className="p-2 -ml-2 hover:bg-slate-100 rounded-lg transition-colors">
               <ArrowLeft className="h-5 w-5 text-slate-500" />
@@ -191,7 +170,7 @@ export default function EditarRegistroPage({ params }: Props) {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-6 py-12">
+      <main className="max-w-6xl mx-auto px-6 py-12">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-6">
             <h3 className="mb-4 flex items-center gap-2 font-medium text-slate-900">

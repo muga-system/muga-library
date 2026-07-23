@@ -23,6 +23,12 @@ function toSlug(name: string): string {
     .replace(/[^a-z0-9-]/g, '')
 }
 
+function formatDate(value: string | null | undefined): string {
+  if (!value) return "—"
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? "—" : date.toLocaleDateString("es-ES")
+}
+
 export const dynamic = 'force-dynamic'
 
 export default function BasesDeDatosPage() {
@@ -195,7 +201,7 @@ export default function BasesDeDatosPage() {
                         {db.records_count || 0}
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-500">
-                        {new Date(db.createdAt).toLocaleDateString("es-ES")}
+                        {formatDate(db.createdAt)}
                       </td>
                       <td className="px-6 py-4 text-right overflow-visible">
                         <div className="relative" data-row-menu-root="true">

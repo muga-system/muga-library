@@ -408,7 +408,7 @@ export default function ImportarPage() {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-6 py-8">
+      <main className="max-w-6xl mx-auto px-6 py-8">
         <div className="flex items-center gap-2 mb-6">
           <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${step >= 1 ? "bg-slate-900 text-white" : "bg-slate-200 text-slate-500"}`}>
             1

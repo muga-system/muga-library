@@ -2,11 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, BookOpen, Clock, RefreshCcw } from "lucide-react"
+import { BookOpen, Clock, RefreshCcw } from "lucide-react"
 import { useNotifications } from "@/components/notifications-provider"
+import { MugaHeader } from "@/components/muga-header"
 
 type MyLoan = {
   id: string
+  recordId: string
+  databaseName: string
   status: "requested" | "active" | "rejected" | "returned" | "overdue"
   loanDate: string
   dueDate: string
@@ -36,15 +39,15 @@ function getStatusUi(status: MyLoan["status"]) {
     return {
       label: "Pendiente",
       badge: "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300",
-      detail: "Tu solicitud esta pendiente de aprobacion del equipo bibliotecario.",
+      detail: "La biblioteca recibió tu solicitud y todavía debe revisarla.",
     }
   }
 
   if (status === "active") {
     return {
-      label: "Activo",
+      label: "Aprobado",
       badge: "bg-blue-100 text-blue-700 dark:bg-slate-800 dark:text-slate-200",
-      detail: "Prestamo aprobado y en curso.",
+      detail: "La biblioteca aprobó el préstamo. Consultá con su equipo para coordinar el retiro.",
     }
   }
 
@@ -52,7 +55,7 @@ function getStatusUi(status: MyLoan["status"]) {
     return {
       label: "Vencido",
       badge: "bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300",
-      detail: "El prestamo esta fuera de termino.",
+      detail: "El préstamo está fuera de término. Contactá a la biblioteca para devolverlo.",
     }
   }
 
@@ -60,14 +63,14 @@ function getStatusUi(status: MyLoan["status"]) {
     return {
       label: "Rechazado",
       badge: "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-200",
-      detail: "La solicitud fue rechazada. Puedes volver a intentar mas tarde.",
+      detail: "La biblioteca rechazó la solicitud. Podés volver a intentarlo más adelante.",
     }
   }
 
   return {
     label: "Devuelto",
     badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300",
-    detail: "Prestamo finalizado.",
+    detail: "Préstamo finalizado.",
   }
 }
 
@@ -102,29 +105,17 @@ export default function MisSolicitudesPage() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950">
-      <header className="border-b border-slate-200 dark:border-slate-800">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <Link href="/" className="inline-flex items-center gap-2 rounded-lg px-2 py-1 text-sm text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800">
-            <ArrowLeft className="h-4 w-4" />
-            Volver al catalogo
-          </Link>
+      <MugaHeader
+        subtitle="Cuenta de lector"
+        homeHref="/catalogo"
+        navigation={<Link href="/catalogo" className="hover:text-slate-900 dark:hover:text-slate-200">Explorar catálogos</Link>}
+        actions={<button type="button" onClick={loadItems} disabled={loading} className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"><RefreshCcw className="h-4 w-4" />Actualizar</button>}
+      />
 
-          <button
-            type="button"
-            onClick={loadItems}
-            disabled={loading}
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-          >
-            <RefreshCcw className="h-4 w-4" />
-            Actualizar
-          </button>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-5xl px-6 py-10">
+      <main className="mx-auto max-w-6xl px-6 py-10">
         <div className="mb-6">
-          <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">Mis solicitudes y prestamos</h1>
-          <p className="text-slate-500">Aqui puedes ver el estado de cada solicitud enviada.</p>
+          <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">Mis préstamos</h1>
+          <p className="mt-2 text-sm leading-6 text-slate-500">Seguimiento de las solicitudes que enviaste a cada biblioteca.</p>
         </div>
 
         {loading ? (
@@ -134,9 +125,9 @@ export default function MisSolicitudesPage() {
         ) : orderedItems.length === 0 ? (
           <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center dark:border-slate-700 dark:bg-slate-900">
             <BookOpen className="mx-auto mb-3 h-8 w-8 text-slate-400" />
-            <p className="text-slate-600 dark:text-slate-300">Aun no tienes solicitudes registradas.</p>
-            <Link href="/" className="mt-3 inline-flex rounded-lg bg-slate-900 px-3 py-2 text-sm text-white hover:bg-slate-800">
-              Ver catalogo
+            <p className="text-slate-600 dark:text-slate-300">Todavía no enviaste ninguna solicitud.</p>
+            <Link href="/catalogo" className="mt-3 inline-flex rounded-lg bg-slate-900 px-3 py-2 text-sm text-white hover:bg-slate-800">
+              Explorar catálogos
             </Link>
           </div>
         ) : (
@@ -151,7 +142,8 @@ export default function MisSolicitudesPage() {
                 <article key={loan.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
                   <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                     <div>
-                      <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
+                      <p className="mb-1 text-xs text-slate-500">{loan.databaseName}</p>
+                      <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100"><Link href={`/libro/${loan.recordId}`} className="hover:underline">{title}</Link></h2>
                       <p className="text-xs text-slate-500">{author || "Autor no disponible"}</p>
                     </div>
                     <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${statusUi.badge}`}>
@@ -161,13 +153,13 @@ export default function MisSolicitudesPage() {
 
                   <p className="mb-2 text-sm text-slate-600 dark:text-slate-300">{statusUi.detail}</p>
 
-                  <div className="grid grid-cols-1 gap-2 text-xs text-slate-500 sm:grid-cols-3">
+                  <div className={`grid grid-cols-1 gap-2 text-xs text-slate-500 ${effectiveStatus === "requested" || effectiveStatus === "rejected" ? "" : "sm:grid-cols-3"}`}>
                     <div className="inline-flex items-center gap-1.5">
                       <Clock className="h-3.5 w-3.5" />
                       Solicitud: {new Date(loan.createdAt).toLocaleDateString("es-ES")}
                     </div>
-                    <div>Inicio: {asDate(loan.loanDate) ? new Date(loan.loanDate).toLocaleDateString("es-ES") : "-"}</div>
-                    <div>Vencimiento: {asDate(loan.dueDate) ? new Date(loan.dueDate).toLocaleDateString("es-ES") : "-"}</div>
+                    {effectiveStatus !== "requested" && effectiveStatus !== "rejected" ? <div>Inicio: {asDate(loan.loanDate) ? new Date(loan.loanDate).toLocaleDateString("es-ES") : "-"}</div> : null}
+                    {effectiveStatus !== "requested" && effectiveStatus !== "rejected" ? <div>Vencimiento: {asDate(loan.dueDate) ? new Date(loan.dueDate).toLocaleDateString("es-ES") : "-"}</div> : null}
                   </div>
 
                   {loan.returnDate ? (

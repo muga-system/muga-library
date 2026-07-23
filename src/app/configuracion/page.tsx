@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
-import { ArrowLeft, User, Building2, Bell, Shield, Download, Save, Check, Camera } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
+import { User, Building2, Bell, Shield, Download, Save, Check, Camera } from "lucide-react"
+import { getCurrentUser } from "@/lib/auth/client"
+import { uploadImage } from "@/lib/uploads/client"
 import { useNotifications } from "@/components/notifications-provider"
+import { MugaHeader } from "@/components/muga-header"
 
 export default function ConfiguracionPage() {
-  const supabase = createClient()
   const notifications = useNotifications()
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const [user, setUser] = useState<any>(null)
@@ -40,15 +41,15 @@ export default function ConfiguracionPage() {
   }, [])
 
   async function loadUser() {
-    const { data: { user } } = await supabase.auth.getUser()
+    const { user } = await getCurrentUser()
     if (user) {
       setUser(user)
       setProfile({
-        nombre: user.user_metadata?.full_name || "",
+        nombre: "",
         email: user.email || "",
         newEmail: "",
-        biblioteca: user.user_metadata?.biblioteca || "",
-        avatarUrl: user.user_metadata?.avatar_url || "",
+        biblioteca: "",
+        avatarUrl: "",
         newPassword: "",
         confirmPassword: "",
       })
@@ -84,31 +85,11 @@ export default function ConfiguracionPage() {
     }
 
     try {
-      const extension = file.name.split(".").pop() || "jpg"
-      const path = `${user.id}/${Date.now()}.${extension}`
-
-      let uploadResult = await supabase.storage
-        .from("avatars")
-        .upload(path, file, { upsert: true })
-
-      if (uploadResult.error?.message?.toLowerCase().includes("bucket not found")) {
-        const ensureBucket = await fetch('/api/storage/avatar-bucket', { method: 'POST' })
-        if (ensureBucket.ok) {
-          uploadResult = await supabase.storage
-            .from("avatars")
-            .upload(path, file, { upsert: true })
-        }
-      }
-
-      if (uploadResult.error) throw uploadResult.error
-
-      const { data } = supabase.storage.from("avatars").getPublicUrl(path)
-      if (!data?.publicUrl) throw new Error("No se pudo obtener URL de la imagen")
-
-      setProfile((prev) => ({ ...prev, avatarUrl: data.publicUrl }))
+      const publicUrl = await uploadImage(file, "avatar")
+      setProfile((prev) => ({ ...prev, avatarUrl: publicUrl }))
       notifications.success("Imagen cargada", "Guarda cambios para aplicar la foto del perfil.")
     } catch (error) {
-      notifications.error("No se pudo subir la imagen", "Verifica que exista el bucket 'avatars' en Supabase Storage.")
+      notifications.error("No se pudo cargar la imagen", "Intenta nuevamente con otra imagen.")
     }
   }
 
@@ -148,9 +129,8 @@ export default function ConfiguracionPage() {
           payload.password = profile.newPassword.trim()
         }
 
-        const { error } = await supabase.auth.updateUser(payload)
-
-        if (error) throw error
+        const res = await fetch('/api/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ profile: payload.data }) })
+        if (!res.ok) throw new Error('PROFILE_UPDATE_FAILED')
 
         if (profile.newEmail.trim()) {
           notifications.info("Cambio de email solicitado", "Revisa tu correo para confirmar el nuevo email.")
@@ -218,26 +198,23 @@ export default function ConfiguracionPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-white">
-      <header className="border-b border-slate-200">
-        <div className="max-w-6xl mx-auto px-6 py-4">
-          <div className="flex items-center gap-4">
-            <Link href="/admin" className="p-2 hover:bg-slate-50 rounded-lg transition-colors">
-              <ArrowLeft className="h-5 w-5 text-slate-500" />
-            </Link>
-            <div>
-              <h1 className="text-xl font-bold text-slate-900">Configuración</h1>
-              <p className="text-xs text-slate-500">Administra tu cuenta y preferencias</p>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-white dark:bg-slate-950">
+      <MugaHeader
+        title="Configuración"
+        subtitle="Cuenta y preferencias"
+        homeHref="/admin"
+        actions={
+          <Link href="/admin" className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+            Volver al panel
+          </Link>
+        }
+      />
 
       <main className="max-w-6xl mx-auto px-6 py-12">
-        <div className="flex gap-8">
+        <div className="flex flex-col gap-8 md:flex-row">
           {/* Sidebar */}
-          <div className="w-56 flex-shrink-0">
-            <nav className="space-y-1">
+          <div className="w-full flex-shrink-0 md:w-56">
+            <nav className="grid grid-cols-2 gap-1 sm:grid-cols-4 md:block md:space-y-1">
               {tabs.map((tab) => {
                 const Icon = tab.icon
                 return (
@@ -259,7 +236,7 @@ export default function ConfiguracionPage() {
           </div>
 
           {/* Content */}
-          <div className="flex-1">
+          <div className="min-w-0 flex-1">
             {activeTab === "perfil" && (
               <div className="space-y-6">
                 <div className="bg-slate-50 rounded-xl border border-slate-200 p-6">
@@ -352,7 +329,7 @@ export default function ConfiguracionPage() {
                       <p className="mt-1 text-xs text-slate-500">Recibirás un email para confirmar el cambio.</p>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1.5">
                           Nueva contrasena

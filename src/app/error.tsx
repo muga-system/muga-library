@@ -19,7 +19,7 @@ export default function GlobalError({
       <h1 className="mb-3 text-2xl font-semibold">No pudimos conectar la aplicacion</h1>
       <p className="mb-6 text-slate-600">
         Puede ser un problema de autenticacion o de conexion con la base de datos.
-        Revisa variables de entorno y estado de Supabase.
+        Revisa la configuración local y el estado de la base de datos.
       </p>
 
       <div className="mb-8 flex flex-wrap items-center justify-center gap-3">

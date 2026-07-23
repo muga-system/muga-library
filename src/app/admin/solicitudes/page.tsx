@@ -8,7 +8,7 @@ import { useNotifications } from "@/components/notifications-provider"
 type PendingLoan = {
   id: string
   borrowerName: string
-  borrowerType: "student" | "teacher"
+  borrowerType: "reader" | "student" | "teacher"
   borrowerCourse?: string
   borrowerDivision?: string
   borrowerDepartment?: string
@@ -35,7 +35,11 @@ function getBorrowerLabel(loan: PendingLoan): string {
     return grade ? `Alumno ${grade}` : "Alumno"
   }
 
-  return loan.borrowerDepartment ? `Profesor - ${loan.borrowerDepartment}` : "Profesor"
+  if (loan.borrowerType === "teacher") {
+    return loan.borrowerDepartment ? `Docente - ${loan.borrowerDepartment}` : "Docente"
+  }
+
+  return "Lector/a"
 }
 
 export default function AdminSolicitudesPage() {

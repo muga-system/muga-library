@@ -44,7 +44,7 @@ export default function NuevaBaseDeDatosPage() {
   return (
     <div className="min-h-screen bg-white">
       <header className="border-b border-slate-200">
-        <div className="max-w-2xl mx-auto px-6 py-4">
+        <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="flex items-center gap-4">
             <Link href="/bases-de-datos" className="p-2 -ml-2 hover:bg-slate-100 rounded-lg transition-colors">
               <ArrowLeft className="h-5 w-5 text-slate-500" />
@@ -57,7 +57,7 @@ export default function NuevaBaseDeDatosPage() {
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-6 py-8">
+      <main className="max-w-6xl mx-auto px-6 py-8">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="bg-white rounded-xl border border-slate-200 p-6">
             <h3 className="font-medium text-slate-900 mb-4 flex items-center gap-2">

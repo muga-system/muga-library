@@ -13,8 +13,8 @@ import {
   Clock,
 } from "lucide-react"
 import { AuthSignOutButton } from "@/components/auth-signout-button"
-import { createClient } from "@/lib/supabase/server"
-import { getLoanStats } from "@/lib/services/database"
+import { MugaHeader } from "@/components/muga-header"
+import { getAllDatabases, getAllRecords, getLoanStats } from "@/lib/services/database"
 
 function toSlug(name: string): string {
   return name
@@ -26,16 +26,15 @@ function toSlug(name: string): string {
 }
 
 async function getStats() {
-  const supabase = await createClient()
-  const [databasesResult, recordsResult, loanStats] = await Promise.all([
-    supabase.from("databases").select("id", { count: "exact", head: true }),
-    supabase.from("records").select("id", { count: "exact", head: true }),
+  const [databaseRows, recordRows, loanStats] = await Promise.all([
+    getAllDatabases(),
+    getAllRecords(),
     getLoanStats().catch(() => ({ requested: 0, active: 0, overdue: 0, returned: 0 })),
   ])
 
   return {
-    databases: databasesResult.count || 0,
-    records: recordsResult.count || 0,
+    databases: databaseRows.length,
+    records: recordRows.length,
     requested: loanStats.requested || 0,
     loans: loanStats.active || 0,
     overdue: loanStats.overdue || 0,
@@ -43,12 +42,7 @@ async function getStats() {
 }
 
 async function getDatabases() {
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from("databases")
-    .select("id, name, description, created_at")
-    .order("created_at", { ascending: false })
-  return data || []
+  return getAllDatabases()
 }
 
 export default async function AdminPage() {
@@ -57,17 +51,12 @@ export default async function AdminPage() {
 
   return (
       <div className="min-h-screen bg-white dark:bg-slate-950">
-        <header className="border-b border-slate-200 dark:border-slate-800">
-          <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900">
-                <Library className="h-4 w-4 text-white" />
-              </div>
-              <span className="font-semibold text-slate-900 dark:text-slate-100">Panel Administrativo</span>
-            </div>
-            <AuthSignOutButton />
-          </div>
-        </header>
+        <MugaHeader
+          title="Panel Administrativo"
+          subtitle="Gestión Bibliotecaria"
+          homeHref="/admin"
+          actions={<AuthSignOutButton />}
+        />
 
         <main className="mx-auto max-w-6xl px-6 py-12">
           <div className="mb-12">
