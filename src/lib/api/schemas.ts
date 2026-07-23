@@ -52,7 +52,7 @@ export const loansQuerySchema = z.object({
 export const createLoanSchema = z.object({
   database_id: z.string().uuid("Invalid database_id format"),
   record_id: z.string().uuid("Invalid record_id format"),
-  borrower_type: z.enum(["student", "teacher"]),
+  borrower_type: z.enum(["reader", "student", "teacher"]),
   borrower_name: z.string().trim().min(1, "borrower_name is required").max(255, "borrower_name is too long"),
   borrower_course: z.string().trim().max(10, "borrower_course is too long").optional(),
   borrower_division: z.string().trim().max(5, "borrower_division is too long").optional(),

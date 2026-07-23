@@ -57,6 +57,12 @@ export async function POST(request: Request) {
     if (error instanceof Error && error.message === "DUPLICATE_ACTIVE_LOAN") {
       return apiError(409, "DUPLICATE_ACTIVE_LOAN", "Ya tienes un prestamo activo para este libro")
     }
+    if (error instanceof Error && error.message === "NO_AVAILABLE_COPIES") {
+      return apiError(409, "NO_AVAILABLE_COPIES", "No hay ejemplares disponibles para solicitar")
+    }
+    if (error instanceof Error && error.message === "RECORD_NOT_FOUND") {
+      return apiError(404, "RECORD_NOT_FOUND", "El libro solicitado no existe en este catalogo")
+    }
     return apiError(500, "LOAN_CREATE_FAILED", "Failed to create loan")
   }
 }

@@ -1,318 +1,102 @@
-import { supabaseAdmin } from "./database"
+import { and, desc, eq, sql } from "drizzle-orm"
+import { db } from "@/lib/db"
+import { coupons, couponRequests, databases, profiles } from "@/lib/db/schema"
 
-export interface Coupon {
-  id: string
-  code: string
-  is_active: boolean
-  used_at: string | null
-  user_id: string | null
-  max_uses: number
-  uses_count: number
-  created_by: string | null
-  created_at: string
-  expires_at: string | null
-}
+export type Coupon = typeof coupons.$inferSelect
+export type Profile = typeof profiles.$inferSelect
+export type CouponRequest = typeof couponRequests.$inferSelect
 
-export interface Profile {
-  id: string
-  email: string
-  library_name: string | null
-  library_description: string | null
-  library_slug: string | null
-  coupon_id: string | null
-  max_catalogs: number
-  catalogs_created: number
-  is_active: boolean
-  role: string
-  created_at: string
-  updated_at: string
-}
-
-export interface CouponRequest {
-  id: string
-  email: string
-  library_name: string
-  description: string | null
-  status: string
-  requested_at: string
-  processed_by: string | null
-  processed_at: string | null
-  admin_notes: string | null
+function slugify(value: string) {
+  return value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "").slice(0, 50)
 }
 
 export async function validateCoupon(code: string): Promise<{ valid: boolean; coupon?: Coupon; error?: string }> {
-  const { data: coupon, error } = await supabaseAdmin
-    .from("coupons")
-    .select("*")
-    .eq("code", code.toUpperCase())
-    .single()
-
-  if (error || !coupon) {
-    return { valid: false, error: "Cupón no encontrado" }
-  }
-
-  if (!coupon.is_active) {
-    return { valid: false, error: "Cupón desactivado" }
-  }
-
-  if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
-    return { valid: false, error: "Cupón expirado" }
-  }
-
-  if (coupon.used_at && coupon.uses_count >= coupon.max_uses) {
-    return { valid: false, error: "Cupón ya utilizado" }
-  }
-
+  const coupon = db.select().from(coupons).where(eq(coupons.code, code.toUpperCase())).get()
+  if (!coupon) return { valid: false, error: "Cupón no encontrado" }
+  if (!coupon.isActive) return { valid: false, error: "Cupón desactivado" }
+  if (coupon.expiresAt && new Date(coupon.expiresAt) < new Date()) return { valid: false, error: "Cupón expirado" }
+  if (coupon.usesCount >= coupon.maxUses) return { valid: false, error: "Cupón ya utilizado" }
   return { valid: true, coupon }
 }
 
-export async function createProfile(data: {
-  userId: string
-  email: string
-  libraryName: string
-  libraryDescription?: string
-  couponId?: string
-}): Promise<Profile> {
-  const slug = data.libraryName
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-]/g, "")
-    .substring(0, 50)
-
-  const { data: profile, error } = await supabaseAdmin
-    .from("profiles")
-    .insert({
-      id: data.userId,
-      email: data.email,
-      library_name: data.libraryName,
-      library_description: data.libraryDescription || null,
-      library_slug: slug,
-      coupon_id: data.couponId || null,
-      max_catalogs: 2,
-      catalogs_created: 0,
-      is_active: true,
-      role: "librarian",
-    })
-    .select()
-    .single()
-
-  if (error) throw error
+export async function createProfile(data: { userId: string; email: string; libraryName: string; libraryDescription?: string; couponId?: string }): Promise<Profile> {
+  const [profile] = db.insert(profiles).values({
+    id: data.userId,
+    email: data.email,
+    passwordHash: "managed-by-auth",
+    libraryName: data.libraryName,
+    libraryDescription: data.libraryDescription || null,
+    librarySlug: slugify(data.libraryName),
+  }).returning().all()
   return profile
 }
 
-export async function markCouponUsed(couponId: string, userId: string): Promise<void> {
-  const { error } = await supabaseAdmin
-    .from("coupons")
-    .update({
-      used_at: new Date().toISOString(),
-      user_id: userId,
-      uses_count: 1,
-    })
-    .eq("id", couponId)
-
-  if (error) throw error
+export async function markCouponUsed(couponId: string, userId: string) {
+  db.update(coupons).set({ usedAt: new Date().toISOString(), userId, usesCount: sql`${coupons.usesCount} + 1` }).where(eq(coupons.id, couponId)).run()
 }
 
-export async function createDatabaseOwner(
-  ownerId: string,
-  data: { name: string; description?: string }
-): Promise<{ id: string }> {
-  const slug = data.name
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-]/g, "")
-    .substring(0, 50)
-
-  const { data: database, error } = await supabaseAdmin
-    .from("databases")
-    .insert({
-      name: data.name,
-      description: data.description || null,
-      owner_id: ownerId,
-      is_public: true,
-      library_visibility: "public",
-    })
-    .select("id")
-    .single()
-
-  if (error) throw error
+export async function createDatabaseOwner(ownerId: string, data: { name: string; description?: string }) {
+  const [database] = db.insert(databases).values({
+    name: data.name,
+    description: data.description || null,
+    ownerId,
+    isPublic: true,
+    libraryVisibility: "public",
+  }).returning({ id: databases.id }).all()
   return database
 }
 
-export async function getProfileById(id: string): Promise<Profile | null> {
-  const { data, error } = await supabaseAdmin
-    .from("profiles")
-    .select("*")
-    .eq("id", id)
-    .single()
+export async function getProfileById(id: string) { return db.select().from(profiles).where(eq(profiles.id, id)).get() || null }
+export async function getProfileByEmail(email: string) { return db.select().from(profiles).where(eq(profiles.email, email.toLowerCase())).get() || null }
 
-  if (error) return null
-  return data
+export async function updateProfileCatalogCount(profileId: string, increment = true) {
+  db.update(profiles).set({ catalogsCreated: increment ? sql`${profiles.catalogsCreated} + 1` : 0 }).where(eq(profiles.id, profileId)).run()
 }
 
-export async function getProfileByEmail(email: string): Promise<Profile | null> {
-  const { data, error } = await supabaseAdmin
-    .from("profiles")
-    .select("*")
-    .eq("email", email)
-    .single()
-
-  if (error) return null
-  return data
-}
-
-export async function updateProfileCatalogCount(profileId: string, increment: boolean = true): Promise<void> {
-  const { error } = await supabaseAdmin
-    .from("profiles")
-    .update({
-      catalogs_created: increment ? 1 : 0,
-    })
-    .eq("id", profileId)
-
-  if (error) throw error
-}
-
-export async function canCreateCatalog(userId: string): Promise<{ can: boolean; remaining: number }> {
+export async function canCreateCatalog(userId: string) {
   const profile = await getProfileById(userId)
   if (!profile) return { can: false, remaining: 0 }
-
-  const remaining = profile.max_catalogs - profile.catalogs_created
+  const remaining = profile.maxCatalogs - profile.catalogsCreated
   return { can: remaining > 0, remaining: Math.max(0, remaining) }
 }
 
-export async function canCreateLibrary(userId: string): Promise<boolean> {
+export async function canCreateLibrary(userId: string) {
   const profile = await getProfileById(userId)
-  if (!profile) return false
-
-  return !profile.library_name || profile.library_name === ""
+  return Boolean(profile && !profile.libraryName)
 }
 
 export async function getPublicDatabases() {
-  const { data, error } = await supabaseAdmin
-    .from("databases")
-    .select(`
-      id,
-      name,
-      description,
-      is_public,
-      library_visibility,
-      catalog_type,
-      owner_id,
-      profiles!inner(email, library_name)
-    `)
-    .eq("is_public", true)
-    .order("created_at", { ascending: false })
-
-  if (error) throw error
-  return data
+  return db.select({ id: databases.id, name: databases.name, description: databases.description, is_public: databases.isPublic, library_visibility: databases.libraryVisibility, catalog_type: databases.catalogType, owner_id: databases.ownerId, created_at: databases.createdAt })
+    .from(databases).where(eq(databases.isPublic, true)).orderBy(desc(databases.createdAt)).all()
 }
 
-export async function createCouponRequest(data: {
-  email: string
-  libraryName: string
-  description?: string
-}): Promise<CouponRequest> {
-  const { data: request, error } = await supabaseAdmin
-    .from("coupon_requests")
-    .insert({
-      email: data.email,
-      library_name: data.libraryName,
-      description: data.description || null,
-      status: "pending",
-    })
-    .select()
-    .single()
-
-  if (error) throw error
+export async function createCouponRequest(data: { email: string; libraryName: string; description?: string }) {
+  const [request] = db.insert(couponRequests).values({ email: data.email.toLowerCase(), libraryName: data.libraryName, description: data.description || null }).returning().all()
   return request
 }
 
 export async function getCouponRequests(status?: string) {
-  let query = supabaseAdmin.from("coupon_requests").select("*")
-
-  if (status) {
-    query = query.eq("status", status)
-  }
-
-  const { data, error } = await query.order("requested_at", { ascending: false })
-
-  if (error) throw error
-  return data
+  const condition = status ? eq(couponRequests.status, status) : undefined
+  return db.select().from(couponRequests).where(condition).orderBy(desc(couponRequests.requestedAt)).all()
 }
 
-export async function processCouponRequest(
-  requestId: string,
-  action: "approve" | "reject",
-  adminId: string,
-  adminNotes?: string
-): Promise<Coupon | null> {
-  const { data: request } = await supabaseAdmin
-    .from("coupon_requests")
-    .select("*")
-    .eq("id", requestId)
-    .single()
-
+export async function processCouponRequest(requestId: string, action: "approve" | "reject", adminId: string, adminNotes?: string): Promise<Coupon | null> {
+  const request = db.select().from(couponRequests).where(eq(couponRequests.id, requestId)).get()
   if (!request) throw new Error("Solicitud no encontrada")
-
+  const processedAt = new Date().toISOString()
   if (action === "reject") {
-    await supabaseAdmin
-      .from("coupon_requests")
-      .update({
-        status: "rejected",
-        processed_by: adminId,
-        processed_at: new Date().toISOString(),
-        admin_notes: adminNotes || null,
-      })
-      .eq("id", requestId)
-
+    db.update(couponRequests).set({ status: "rejected", processedBy: adminId, processedAt, adminNotes: adminNotes || null }).where(eq(couponRequests.id, requestId)).run()
     return null
   }
-
   const couponCode = generateCouponCode()
-
-  const { data: coupon } = await supabaseAdmin
-    .from("coupons")
-    .insert({
-      code: couponCode,
-      created_by: adminId,
-      expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-    })
-    .select()
-    .single()
-
-  await supabaseAdmin
-    .from("coupon_requests")
-    .update({
-      status: "approved",
-      processed_by: adminId,
-      processed_at: new Date().toISOString(),
-      admin_notes: `Cupón generado: ${couponCode}. ${adminNotes || ""}`,
-    })
-    .eq("id", requestId)
-
+  const [coupon] = db.insert(coupons).values({ code: couponCode, createdBy: adminId, expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() }).returning().all()
+  db.update(couponRequests).set({ status: "approved", processedBy: adminId, processedAt, adminNotes: `Cupón generado: ${couponCode}. ${adminNotes || ""}` }).where(eq(couponRequests.id, requestId)).run()
   return coupon
 }
 
-function generateCouponCode(): string {
+function generateCouponCode() {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-  let code = ""
-  for (let i = 0; i < 16; i++) {
-    if (i > 0 && i % 4 === 0) code += "-"
-    code += chars.charAt(Math.floor(Math.random() * chars.length))
-  }
-  return code
+  return Array.from({ length: 16 }, (_, index) => index > 0 && index % 4 === 0 ? `-${chars[Math.floor(Math.random() * chars.length)]}` : chars[Math.floor(Math.random() * chars.length)]).join("")
 }
 
-export async function getAdminProfiles() {
-  const { data, error } = await supabaseAdmin
-    .from("profiles")
-    .select("*")
-    .eq("role", "admin")
-
-  if (error) throw error
-  return data
-}
+export async function getAdminProfiles() { return db.select().from(profiles).where(eq(profiles.role, "admin")).all() }

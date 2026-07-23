@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-const requireApiUser = vi.fn()
+const requireApiAdmin = vi.fn()
 const getAllDatabases = vi.fn()
 const createDatabase = vi.fn()
 
 vi.mock("@/lib/api/auth", () => ({
-  requireApiUser,
+  requireApiAdmin,
 }))
 
 vi.mock("@/lib/services/database", () => ({
@@ -20,7 +20,7 @@ describe("/api/databases route", () => {
   })
 
   it("returns 401 when user is not authenticated", async () => {
-    requireApiUser.mockResolvedValue({
+    requireApiAdmin.mockResolvedValue({
       ok: false,
       response: Response.json({ error: "Authentication required", code: "AUTH_REQUIRED" }, { status: 401 }),
     })
@@ -34,7 +34,7 @@ describe("/api/databases route", () => {
   })
 
   it("returns 400 on invalid payload", async () => {
-    requireApiUser.mockResolvedValue({
+    requireApiAdmin.mockResolvedValue({
       ok: true,
       user: { id: "user-id" },
     })
@@ -54,7 +54,7 @@ describe("/api/databases route", () => {
   })
 
   it("creates database with valid payload", async () => {
-    requireApiUser.mockResolvedValue({
+    requireApiAdmin.mockResolvedValue({
       ok: true,
       user: { id: "user-id" },
     })
