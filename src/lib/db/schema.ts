@@ -1,149 +1,170 @@
-import { pgTable, uuid, varchar, text, timestamp, integer, boolean, serial, jsonb, date, index } from 'drizzle-orm/pg-core';
+import {
+  integer,
+  index,
+  sqliteTable,
+  text,
+  uniqueIndex,
+} from "drizzle-orm/sqlite-core"
 
-// Catalogs / Databases
-export const databases = pgTable('databases', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  name: varchar('name', { length: 255 }).notNull(),
-  description: text('description'),
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow(),
-});
+const id = () => text("id").primaryKey().$defaultFn(() => crypto.randomUUID())
+const json = <T>(name: string) => text(name, { mode: "json" }).$type<T>()
 
-// Records (Books)
-export const records = pgTable('records', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  databaseId: uuid('database_id').notNull().references(() => databases.id, { onDelete: 'cascade' }),
-  mfn: serial('mfn'),
-  data: jsonb('data').notNull().default({}),
-  totalEjemplares: integer('total_ejemplares').default(1),
-  disponibles: integer('disponibles').default(1),
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow(),
+export const profiles = sqliteTable("profiles", {
+  id: id(),
+  email: text("email").notNull(),
+  passwordHash: text("password_hash").notNull(),
+  libraryName: text("library_name"),
+  libraryDescription: text("library_description"),
+  librarySlug: text("library_slug"),
+  maxCatalogs: integer("max_catalogs").notNull().default(2),
+  catalogsCreated: integer("catalogs_created").notNull().default(0),
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  role: text("role").notNull().default("reader"),
+  createdAt: text("created_at").notNull().default("CURRENT_TIMESTAMP"),
+  updatedAt: text("updated_at").notNull().default("CURRENT_TIMESTAMP"),
 }, (table) => ({
-  databaseIdx: index('idx_records_database').on(table.databaseId),
-}));
+  emailIdx: uniqueIndex("idx_profiles_email").on(table.email),
+  librarySlugIdx: uniqueIndex("idx_profiles_library_slug").on(table.librarySlug),
+}))
 
-// Loans
-export const loans = pgTable('loans', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  databaseId: uuid('database_id').notNull().references(() => databases.id, { onDelete: 'cascade' }),
-  recordId: uuid('record_id').notNull().references(() => records.id, { onDelete: 'cascade' }),
-  
-  // Borrower
-  borrowerType: varchar('borrower_type', { length: 20 }).notNull(),
-  borrowerName: varchar('borrower_name', { length: 255 }).notNull(),
-  borrowerCourse: varchar('borrower_course', { length: 10 }),
-  borrowerDivision: varchar('borrower_division', { length: 5 }),
-  borrowerDepartment: varchar('borrower_department', { length: 100 }),
-  
-  // Dates
-  loanDate: date('loan_date').notNull().default('now'),
-  dueDate: date('due_date').notNull(),
-  returnDate: date('return_date'),
-  
-  // Status
-  status: varchar('status', { length: 20 }).default('active'),
-  
-  // Notes
-  notes: text('notes'),
-  createdBy: uuid('created_by'),
-  createdAt: timestamp('created_at').defaultNow(),
+export const sessions = sqliteTable("sessions", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+  expiresAt: integer("expires_at").notNull(),
+  createdAt: text("created_at").notNull().default("CURRENT_TIMESTAMP"),
 }, (table) => ({
-  statusIdx: index('idx_loans_status').on(table.status),
-  recordIdx: index('idx_loans_record').on(table.recordId),
-}));
+  userIdx: index("idx_sessions_user_id").on(table.userId),
+}))
 
-// Loan Config
-export const loanConfig = pgTable('loan_config', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  key: varchar('key', { length: 50 }).notNull().unique(),
-  value: text('value').notNull(),
-  description: text('description'),
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow(),
-});
+export const databases = sqliteTable("databases", {
+  id: id(),
+  name: text("name").notNull(),
+  description: text("description"),
+  ownerId: text("owner_id").references(() => profiles.id, { onDelete: "set null" }),
+  isPublic: integer("is_public", { mode: "boolean" }).notNull().default(false),
+  catalogType: text("catalog_type").notNull().default("general"),
+  libraryVisibility: text("library_visibility").notNull().default("private"),
+  createdAt: text("created_at").notNull().default("CURRENT_TIMESTAMP"),
+  updatedAt: text("updated_at").notNull().default("CURRENT_TIMESTAMP"),
+}, (table) => ({
+  ownerIdx: index("idx_databases_owner").on(table.ownerId),
+}))
 
-// CDU Classes
-export const cduClasses = pgTable('cdu_classes', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  code: varchar('code', { length: 10 }).notNull().unique(),
-  title: varchar('title', { length: 255 }).notNull(),
-  parentCode: varchar('parent_code', { length: 10 }),
-  description: text('description'),
-  examples: jsonb('examples'),
-  createdAt: timestamp('created_at').defaultNow(),
-});
+export const records = sqliteTable("records", {
+  id: id(),
+  databaseId: text("database_id").notNull().references(() => databases.id, { onDelete: "cascade" }),
+  mfn: integer("mfn"),
+  data: json<globalThis.Record<string, unknown>>("data").notNull(),
+  totalEjemplares: integer("total_ejemplares").notNull().default(1),
+  disponibles: integer("disponibles").notNull().default(1),
+  createdAt: text("created_at").notNull().default("CURRENT_TIMESTAMP"),
+  updatedAt: text("updated_at").notNull().default("CURRENT_TIMESTAMP"),
+}, (table) => ({
+  databaseIdx: index("idx_records_database").on(table.databaseId),
+}))
 
-// Record Versions (History)
-export const recordVersions = pgTable('record_versions', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  recordId: uuid('record_id').notNull().references(() => records.id, { onDelete: 'cascade' }),
-  data: jsonb('data').notNull(),
-  versionNumber: integer('version_number').notNull(),
-  changedBy: varchar('changed_by', { length: 255 }),
-  changeType: varchar('change_type', { length: 50 }).notNull(),
-  createdAt: timestamp('created_at').defaultNow(),
-});
+export const loans = sqliteTable("loans", {
+  id: id(),
+  databaseId: text("database_id").notNull().references(() => databases.id, { onDelete: "cascade" }),
+  recordId: text("record_id").notNull().references(() => records.id, { onDelete: "cascade" }),
+  borrowerType: text("borrower_type").notNull(),
+  borrowerName: text("borrower_name").notNull(),
+  borrowerCourse: text("borrower_course"),
+  borrowerDivision: text("borrower_division"),
+  borrowerDepartment: text("borrower_department"),
+  loanDate: text("loan_date").notNull(),
+  dueDate: text("due_date").notNull(),
+  returnDate: text("return_date"),
+  status: text("status").notNull().default("active"),
+  notes: text("notes"),
+  createdBy: text("created_by").references(() => profiles.id, { onDelete: "set null" }),
+  rejectionReason: text("rejection_reason"),
+  approvedBy: text("approved_by").references(() => profiles.id, { onDelete: "set null" }),
+  approvedAt: text("approved_at"),
+  createdAt: text("created_at").notNull().default("CURRENT_TIMESTAMP"),
+  updatedAt: text("updated_at").notNull().default("CURRENT_TIMESTAMP"),
+}, (table) => ({
+  statusIdx: index("idx_loans_status").on(table.status),
+  recordIdx: index("idx_loans_record").on(table.recordId),
+  borrowerIdx: index("idx_loans_created_by_record_status").on(table.createdBy, table.recordId, table.status),
+}))
 
-// Field Definitions
-export const fieldDefinitions = pgTable('field_definitions', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  databaseId: uuid('database_id').notNull().references(() => databases.id, { onDelete: 'cascade' }),
-  tag: varchar('tag', { length: 10 }).notNull(),
-  label: varchar('label', { length: 255 }).notNull(),
-  type: varchar('type', { length: 50 }).notNull().default('text'),
-  isRepeatable: boolean('is_repeatable').default(false),
-  isSubfield: boolean('is_subfield').default(false),
-  parentTag: varchar('parent_tag', { length: 10 }),
-  required: boolean('required').default(false),
-  orderIndex: integer('order_index').default(0),
-  createdAt: timestamp('created_at').defaultNow(),
-});
+export const loanConfig = sqliteTable("loan_config", {
+  id: id(),
+  key: text("key").notNull(),
+  value: text("value").notNull(),
+  description: text("description"),
+  createdAt: text("created_at").notNull().default("CURRENT_TIMESTAMP"),
+  updatedAt: text("updated_at").notNull().default("CURRENT_TIMESTAMP"),
+}, (table) => ({ keyIdx: uniqueIndex("idx_loan_config_key").on(table.key) }))
 
-// Import Jobs
-export const importJobs = pgTable('import_jobs', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  databaseId: uuid('database_id').notNull().references(() => databases.id, { onDelete: 'cascade' }),
-  filename: varchar('filename', { length: 255 }).notNull(),
-  format: varchar('format', { length: 50 }).notNull(),
-  totalRecords: integer('total_records').default(0),
-  processedRecords: integer('processed_records').default(0),
-  status: varchar('status', { length: 50 }).default('pending'),
-  errors: jsonb('errors'),
-  createdAt: timestamp('created_at').defaultNow(),
-  completedAt: timestamp('completed_at'),
-});
+export const cduClasses = sqliteTable("cdu_classes", {
+  id: id(),
+  code: text("code").notNull(),
+  title: text("title").notNull(),
+  parentCode: text("parent_code"),
+  description: text("description"),
+  examples: json<unknown>("examples"),
+  createdAt: text("created_at").notNull().default("CURRENT_TIMESTAMP"),
+}, (table) => ({ codeIdx: uniqueIndex("idx_cdu_code").on(table.code) }))
 
-// Export Jobs
-export const exportJobs = pgTable('export_jobs', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  databaseId: uuid('database_id').notNull().references(() => databases.id, { onDelete: 'cascade' }),
-  format: varchar('format', { length: 50 }).notNull(),
-  filters: jsonb('filters'),
-  totalRecords: integer('total_records').default(0),
-  status: varchar('status', { length: 50 }).default('pending'),
-  filePath: text('file_path'),
-  createdAt: timestamp('created_at').defaultNow(),
-  completedAt: timestamp('completed_at'),
-});
+export const fieldDefinitions = sqliteTable("field_definitions", {
+  id: id(),
+  databaseId: text("database_id").notNull().references(() => databases.id, { onDelete: "cascade" }),
+  tag: text("tag").notNull(),
+  label: text("label").notNull(),
+  type: text("type").notNull().default("text"),
+  isRepeatable: integer("is_repeatable", { mode: "boolean" }).notNull().default(false),
+  isSubfield: integer("is_subfield", { mode: "boolean" }).notNull().default(false),
+  parentTag: text("parent_tag"),
+  required: integer("required", { mode: "boolean" }).notNull().default(false),
+  orderIndex: integer("order_index").notNull().default(0),
+  createdAt: text("created_at").notNull().default("CURRENT_TIMESTAMP"),
+}, (table) => ({ tagIdx: uniqueIndex("idx_field_definitions_tag_db").on(table.databaseId, table.tag) }))
 
-// Search Index
-export const searchIndex = pgTable('search_index', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  databaseId: uuid('database_id').notNull().references(() => databases.id, { onDelete: 'cascade' }),
-  recordId: uuid('record_id').notNull().references(() => records.id, { onDelete: 'cascade' }),
-  searchVector: text('search_vector'),
-  createdAt: timestamp('created_at').defaultNow(),
-});
+export const recordVersions = sqliteTable("record_versions", {
+  id: id(),
+  recordId: text("record_id").notNull().references(() => records.id, { onDelete: "cascade" }),
+  data: json<globalThis.Record<string, unknown>>("data").notNull(),
+  versionNumber: integer("version_number").notNull(),
+  changedBy: text("changed_by"),
+  changeType: text("change_type").notNull(),
+  createdAt: text("created_at").notNull().default("CURRENT_TIMESTAMP"),
+})
 
-// Type exports
-export type Database = typeof databases.$inferSelect;
-export type Record = typeof records.$inferSelect;
-export type Loan = typeof loans.$inferSelect;
-export type LoanConfig = typeof loanConfig.$inferSelect;
-export type CduClass = typeof cduClasses.$inferSelect;
-export type RecordVersion = typeof recordVersions.$inferSelect;
-export type FieldDefinition = typeof fieldDefinitions.$inferSelect;
-export type ImportJob = typeof importJobs.$inferSelect;
-export type ExportJob = typeof exportJobs.$inferSelect;
-export type SearchIndexEntry = typeof searchIndex.$inferSelect;
+export const coupons = sqliteTable("coupons", {
+  id: id(),
+  code: text("code").notNull(),
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  usedAt: text("used_at"),
+  userId: text("user_id").references(() => profiles.id, { onDelete: "set null" }),
+  maxUses: integer("max_uses").notNull().default(1),
+  usesCount: integer("uses_count").notNull().default(0),
+  createdBy: text("created_by").references(() => profiles.id, { onDelete: "set null" }),
+  createdAt: text("created_at").notNull().default("CURRENT_TIMESTAMP"),
+  expiresAt: text("expires_at"),
+}, (table) => ({ codeIdx: uniqueIndex("idx_coupons_code").on(table.code) }))
+
+export const couponRequests = sqliteTable("coupon_requests", {
+  id: id(),
+  email: text("email").notNull(),
+  libraryName: text("library_name").notNull(),
+  description: text("description"),
+  status: text("status").notNull().default("pending"),
+  requestedAt: text("requested_at").notNull().default("CURRENT_TIMESTAMP"),
+  processedBy: text("processed_by").references(() => profiles.id, { onDelete: "set null" }),
+  processedAt: text("processed_at"),
+  adminNotes: text("admin_notes"),
+}, (table) => ({ statusIdx: index("idx_coupon_requests_status").on(table.status) }))
+
+export type Profile = typeof profiles.$inferSelect
+export type Session = typeof sessions.$inferSelect
+export type Database = typeof databases.$inferSelect
+export type LibraryRecord = typeof records.$inferSelect
+export type Loan = typeof loans.$inferSelect
+export type LoanConfig = typeof loanConfig.$inferSelect
+export type CduClass = typeof cduClasses.$inferSelect
+export type RecordVersion = typeof recordVersions.$inferSelect
+export type FieldDefinition = typeof fieldDefinitions.$inferSelect
+export type Coupon = typeof coupons.$inferSelect
+export type CouponRequest = typeof couponRequests.$inferSelect

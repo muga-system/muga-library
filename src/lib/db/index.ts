@@ -1,12 +1,21 @@
-import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
+import Database from "better-sqlite3"
+import { mkdirSync } from "node:fs"
+import { dirname, resolve } from "node:path"
+import { drizzle } from "drizzle-orm/better-sqlite3"
+import * as schema from "./schema"
 
-const connectionString = process.env.DATABASE_URL!;
+function getDatabasePath() {
+  const configured = process.env.DATABASE_URL || "file:./data/muga-library.db"
+  const path = configured.startsWith("file:") ? configured.slice(5) : configured
+  return resolve(process.cwd(), path)
+}
 
-export const client = postgres(connectionString, { 
-  max: 10,
-  idle_timeout: 20,
-  connect_timeout: 10,
-});
+const databasePath = getDatabasePath()
+mkdirSync(dirname(databasePath), { recursive: true })
 
-export const db = drizzle(client);
+const sqlite = new Database(databasePath)
+sqlite.pragma("foreign_keys = ON")
+sqlite.pragma("journal_mode = WAL")
+
+export const db = drizzle(sqlite, { schema })
+export { sqlite }
