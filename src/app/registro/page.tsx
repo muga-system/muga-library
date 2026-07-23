@@ -1,25 +1,30 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Library, Loader2 } from "lucide-react"
-import { signUpWithEmail } from "@/lib/supabase/auth"
+import { BookOpen, CheckCircle2, Loader2 } from "lucide-react"
+import { signUpWithEmail } from "@/lib/auth/client"
+import { MugaHeader } from "@/components/muga-header"
 
 export default function RegistroPage() {
   const router = useRouter()
+  const [nextPath, setNextPath] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
-  const [success, setSuccess] = useState("")
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    setNextPath(new URLSearchParams(window.location.search).get("next") || "")
+  }, [])
+
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault()
     setLoading(true)
     setError("")
-    setSuccess("")
 
     if (password !== confirmPassword) {
       setError("Las contraseñas no coinciden")
@@ -27,149 +32,75 @@ export default function RegistroPage() {
       return
     }
 
-    if (password.length < 6) {
-      setError("La contraseña debe tener al menos 6 caracteres")
+    if (password.length < 8) {
+      setError("La contraseña debe tener al menos 8 caracteres")
       setLoading(false)
       return
     }
 
     const { data, error: authError } = await signUpWithEmail(email, password)
-    
     if (authError) {
-      setError(authError.message)
+      setError(authError.message === "EMAIL_ALREADY_REGISTERED" ? "Ya existe una cuenta con este correo." : authError.message)
       setLoading(false)
       return
     }
 
-    if (data?.user) {
-      setSuccess("¡Cuenta creada! Por favor verifica tu correo electrónico.")
-      setTimeout(() => router.push("/iniciar-sesion"), 2000)
-    } else {
-      setError("Error al crear la cuenta")
+    if (!data?.session) {
+      setError("No se pudo iniciar la sesión de tu nueva cuenta")
+      setLoading(false)
+      return
     }
-    setLoading(false)
+
+    router.replace(nextPath || "/catalogo")
   }
 
   return (
-    <div className="min-h-screen flex">
-      <div className="flex-1 flex items-center justify-center p-8">
-        <div className="w-full max-w-sm">
+    <div className="min-h-screen bg-white dark:bg-slate-950">
+      <MugaHeader
+        subtitle="Cuenta de lector"
+        actions={<Link href={nextPath ? `/iniciar-sesion?next=${encodeURIComponent(nextPath)}` : "/iniciar-sesion"} className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">Ya tengo cuenta</Link>}
+      />
+
+      <main className="mx-auto max-w-6xl px-6 py-12">
+        <div className="max-w-2xl">
           <div className="mb-8">
-            <div className="w-10 h-10 bg-slate-900 rounded-lg flex items-center justify-center mb-4">
-              <Library className="h-5 w-5 text-white" />
-            </div>
-            <h1 className="text-xl font-semibold text-slate-900">MUGA Books</h1>
-            <p className="text-slate-500 mt-1">Crear cuenta</p>
+            <div className="mb-5 flex h-10 w-10 items-center justify-center rounded-lg bg-slate-900 dark:bg-slate-800"><BookOpen className="h-5 w-5 text-white" /></div>
+            <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">Creá tu cuenta de lector</h1>
+            <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500">Esta cuenta sirve para solicitar libros y seguir tus préstamos. No crea una biblioteca ni habilita funciones administrativas.</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1.5">
-                Correo electrónico
-              </label>
-              <input
-                id="email"
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent"
-                placeholder="tu@email.com"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1.5">
-                Contraseña
-              </label>
-              <input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent"
-                placeholder="Mínimo 6 caracteres"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700 mb-1.5">
-                Confirmar contraseña
-              </label>
-              <input
-                id="confirmPassword"
-                type="password"
-                required
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent"
-                placeholder="Repite tu contraseña"
-              />
-            </div>
-
-            {error && (
-              <div className="text-sm text-red-600">
-                {error}
+          <div className="grid gap-8 lg:grid-cols-[1fr_18rem] lg:items-start">
+            <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-slate-200 bg-slate-50 p-6 dark:border-slate-800 dark:bg-slate-900">
+              <div>
+                <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">Correo electrónico</label>
+                <input id="email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-slate-900 outline-none focus:ring-2 focus:ring-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" placeholder="tu@email.com" />
               </div>
-            )}
 
-            {success && (
-              <div className="text-sm text-green-600">
-                {success}
+              <div>
+                <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">Contraseña</label>
+                <input id="password" type="password" autoComplete="new-password" required value={password} onChange={(event) => setPassword(event.target.value)} className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-slate-900 outline-none focus:ring-2 focus:ring-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" placeholder="Mínimo 8 caracteres" />
               </div>
-            )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors disabled:opacity-50 font-medium"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Creando cuenta...
-                </>
-              ) : (
-                "Crear Cuenta"
-              )}
-            </button>
-          </form>
+              <div>
+                <label htmlFor="confirmPassword" className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">Repetir contraseña</label>
+                <input id="confirmPassword" type="password" autoComplete="new-password" required value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-slate-900 outline-none focus:ring-2 focus:ring-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" />
+              </div>
 
-          <p className="mt-6 text-center text-sm text-slate-500">
-            ¿Ya tienes cuenta?{" "}
-            <Link href="/iniciar-sesion" className="text-slate-900 hover:underline">
-              Inicia sesión
-            </Link>
-          </p>
+              {error ? <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/20 dark:text-red-300">{error}</div> : null}
+
+              <button type="submit" disabled={loading} className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50">
+                {loading ? <><Loader2 className="h-4 w-4 animate-spin" />Creando cuenta...</> : "Crear cuenta de lector"}
+              </button>
+            </form>
+
+            <aside className="space-y-4 text-sm text-slate-600 dark:text-slate-300">
+              <div className="flex gap-3"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" /><p>Una sola cuenta para consultar las bibliotecas participantes.</p></div>
+              <div className="flex gap-3"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" /><p>Cada biblioteca revisa y aprueba sus propias solicitudes.</p></div>
+              <div className="flex gap-3"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" /><p>Podrás consultar el estado y las fechas de devolución.</p></div>
+            </aside>
+          </div>
         </div>
-      </div>
-
-      <div className="hidden lg:flex flex-1 items-center justify-center bg-slate-900 p-12">
-        <div className="max-w-md">
-          <h2 className="text-2xl font-semibold text-white mb-6">
-            Únete a MUGA Books
-          </h2>
-          <ul className="space-y-4 text-slate-400">
-            <li className="flex items-center gap-3">
-              <span className="w-1.5 h-1.5 bg-slate-500 rounded-full" />
-              <span>Gestión profesional de bibliotecas</span>
-            </li>
-            <li className="flex items-center gap-3">
-              <span className="w-1.5 h-1.5 bg-slate-500 rounded-full" />
-              <span>Catálogos MARC21 y UNIMARC</span>
-            </li>
-            <li className="flex items-center gap-3">
-              <span className="w-1.5 h-1.5 bg-slate-500 rounded-full" />
-              <span>Clasificación Decimal Universal (CDU)</span>
-            </li>
-            <li className="flex items-center gap-3">
-              <span className="w-1.5 h-1.5 bg-slate-500 rounded-full" />
-              <span>Importación de catálogos externos</span>
-            </li>
-          </ul>
-        </div>
-      </div>
+      </main>
     </div>
   )
 }

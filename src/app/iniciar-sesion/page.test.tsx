@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { renderHook } from '@testing-library/react'
 import IniciarSesionPage from './page'
 
-vi.mock('@/lib/supabase/auth', () => ({
+vi.mock('@/lib/auth/client', () => ({
   signInWithEmail: vi.fn(),
 }))
 
@@ -27,10 +27,16 @@ describe('IniciarSesionPage', () => {
     expect(screen.getByRole('button', { name: /iniciar sesión/i })).toBeInTheDocument()
   })
 
-  it('should show demo credentials', () => {
+  it('should show the library incorporation path', () => {
     render(<IniciarSesionPage />)
-    
-    expect(screen.getByText(/admin@muga.com/)).toBeInTheDocument()
+
+    expect(screen.getByRole('link', { name: /solicitar incorporación/i })).toHaveAttribute('href', '/solicitar-cupon')
+  })
+
+  it('should show the reader registration path', () => {
+    render(<IniciarSesionPage />)
+
+    expect(screen.getByRole('link', { name: /crear cuenta de lector/i })).toHaveAttribute('href', '/registro')
   })
 
   it('should update email input', async () => {
@@ -52,7 +58,7 @@ describe('IniciarSesionPage', () => {
   })
 
   it('should show error message on failed login', async () => {
-    const { signInWithEmail } = await import('@/lib/supabase/auth')
+    const { signInWithEmail } = await import('@/lib/auth/client')
     ;(signInWithEmail as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       data: null,
       error: { message: 'Invalid credentials' },
@@ -70,7 +76,7 @@ describe('IniciarSesionPage', () => {
   })
 
   it('should show loading state during login', async () => {
-    const { signInWithEmail } = await import('@/lib/supabase/auth')
+    const { signInWithEmail } = await import('@/lib/auth/client')
     ;(signInWithEmail as ReturnType<typeof vi.fn>).mockImplementationOnce(
       () => new Promise(resolve => setTimeout(() => resolve({ data: null, error: null }), 100))
     )
@@ -86,7 +92,7 @@ describe('IniciarSesionPage', () => {
   })
 
   it('should show error when no session returned', async () => {
-    const { signInWithEmail } = await import('@/lib/supabase/auth')
+    const { signInWithEmail } = await import('@/lib/auth/client')
     ;(signInWithEmail as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       data: { session: null },
       error: null,

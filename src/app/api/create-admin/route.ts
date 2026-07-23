@@ -1,56 +1,31 @@
-import { createClient } from "@supabase/supabase-js"
-import { apiError, apiSuccess } from "@/lib/api/http"
+import { NextResponse } from "next/server"
+import { createUser } from "@/lib/auth/service"
 
 export async function POST(request: Request) {
   if (process.env.NODE_ENV === "production") {
-    return apiError(404, "NOT_FOUND", "Not found")
+    return NextResponse.json({ error: "Not found", code: "NOT_FOUND" }, { status: 404 })
   }
 
   if (process.env.ADMIN_BOOTSTRAP_ENABLED !== "true") {
-    return apiError(403, "BOOTSTRAP_DISABLED", "Admin bootstrap is disabled")
+    return NextResponse.json({ error: "Admin bootstrap is disabled", code: "BOOTSTRAP_DISABLED" }, { status: 403 })
   }
 
-  const bootstrapSecret = process.env.ADMIN_BOOTSTRAP_SECRET
-  if (!bootstrapSecret) {
-    return apiError(503, "BOOTSTRAP_NOT_CONFIGURED", "Admin bootstrap endpoint is not configured")
-  }
-
+  const configuredSecret = process.env.ADMIN_BOOTSTRAP_SECRET
   const providedSecret = request.headers.get("x-admin-bootstrap-secret")
-  if (!providedSecret || providedSecret !== bootstrapSecret) {
-    return apiError(403, "FORBIDDEN", "Forbidden")
+  if (!configuredSecret || !providedSecret || providedSecret !== configuredSecret) {
+    return NextResponse.json({ error: "Forbidden", code: "FORBIDDEN" }, { status: 403 })
   }
 
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return apiError(503, "SUPABASE_NOT_CONFIGURED", "Supabase URL and service role key must be set")
-  }
-
-  const email = process.env.ADMIN_EMAIL || "admin@example.com"
   const password = process.env.ADMIN_PASSWORD || ""
-
   if (!password) {
-    return apiError(400, "VALIDATION_ERROR", "ADMIN_PASSWORD must be set in environment variables for admin creation")
+    return NextResponse.json({ error: "ADMIN_PASSWORD must be set", code: "VALIDATION_ERROR" }, { status: 400 })
   }
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY,
-  )
-
-  const { data, error } = await supabase.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-    app_metadata: {
-      role: "admin",
-    },
-    user_metadata: {
-      role: "admin",
-    },
-  })
-
-  if (error) {
-    return apiError(400, "ADMIN_CREATE_FAILED", error.message)
+  try {
+    const user = await createUser(process.env.ADMIN_EMAIL || "admin@example.com", password, "admin")
+    return NextResponse.json({ user }, { status: 201 })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "ADMIN_CREATE_FAILED"
+    return NextResponse.json({ error: message, code: "ADMIN_CREATE_FAILED" }, { status: 400 })
   }
-
-  return apiSuccess({ user: data.user })
 }
