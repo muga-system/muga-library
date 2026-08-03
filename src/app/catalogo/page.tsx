@@ -3,18 +3,8 @@ import { ArrowLeft, ArrowRight, BookOpen, Library, Search } from "lucide-react"
 import { getPublicBooks, getPublicCatalogs } from "@/lib/services/database"
 import { PublicCatalogCards } from "./public-catalog-cards"
 import { MugaHeader } from "@/components/muga-header"
+import { CatalogPagination } from "@/components/catalog-pagination"
 import { getCurrentUser, type AuthUser } from "@/lib/auth/service"
-
-type PaginationItem = number | "ellipsis"
-
-function getPaginationItems(page: number, pageCount: number): PaginationItem[] {
-  const visiblePages = new Set<number>([1, pageCount, page - 1, page, page + 1])
-  if (page <= 3) [1, 2, 3, 4].forEach((item) => visiblePages.add(item))
-  if (page >= pageCount - 2) [pageCount - 3, pageCount - 2, pageCount - 1, pageCount].forEach((item) => visiblePages.add(item))
-
-  const pages = [...visiblePages].filter((item) => item >= 1 && item <= pageCount).sort((a, b) => a - b)
-  return pages.flatMap((item, index) => (index > 0 && item - pages[index - 1] > 1 ? ["ellipsis", item as number] : [item]))
-}
 
 function PublicHeader({ user }: { user: AuthUser | null }) {
   const isReader = user?.app_metadata.role === "reader"
@@ -84,7 +74,6 @@ export default async function PublicCatalogPage({ searchParams }: { searchParams
   const pageSize = 20
   const result = await getPublicBooks({ search: query, databaseId: selectedCatalog.id, page, pageSize })
   const pageCount = Math.max(1, Math.ceil(result.total / pageSize))
-  const paginationItems = getPaginationItems(page, pageCount)
   const pageHref = (nextPage: number) => {
     const next = new URLSearchParams({ catalog: selectedCatalog.id })
     if (query) next.set("q", query)
@@ -114,16 +103,7 @@ export default async function PublicCatalogPage({ searchParams }: { searchParams
         <div className="mb-6 flex items-center gap-2 text-sm text-slate-500"><BookOpen className="h-4 w-4" />{result.total} libros encontrados</div>
         <PublicCatalogCards books={result.items} />
 
-        {pageCount > 1 ? (
-          <nav className="mt-8 flex flex-col gap-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm dark:border-slate-800 dark:bg-slate-900 sm:flex-row sm:items-center sm:justify-between" aria-label="Paginación pública">
-            <span className="text-slate-500 dark:text-slate-400">Página {page} de {pageCount}</span>
-            <div className="flex items-center justify-center gap-1.5">
-              {page > 1 ? <Link href={pageHref(page - 1)} aria-label="Página anterior" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-300 text-slate-600 hover:bg-white dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-950"><ArrowLeft className="h-4 w-4" /></Link> : <span aria-hidden="true" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-300 dark:border-slate-800 dark:text-slate-700"><ArrowLeft className="h-4 w-4" /></span>}
-              {paginationItems.map((item, index) => item === "ellipsis" ? <span key={`ellipsis-${index}`} aria-hidden="true" className="inline-flex h-9 w-6 items-center justify-center text-slate-400">…</span> : <Link key={item} href={pageHref(item)} aria-current={item === page ? "page" : undefined} aria-label={`Página ${item}`} className={`inline-flex h-9 min-w-9 items-center justify-center rounded-lg border px-2 font-medium transition-colors ${item === page ? "border-slate-900 bg-slate-900 text-white" : "border-slate-300 text-slate-600 hover:bg-white dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-950"}`}>{item}</Link>)}
-              {page < pageCount ? <Link href={pageHref(page + 1)} aria-label="Página siguiente" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-300 text-slate-600 hover:bg-white dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-950"><ArrowRight className="h-4 w-4" /></Link> : <span aria-hidden="true" className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-300 dark:border-slate-800 dark:text-slate-700"><ArrowRight className="h-4 w-4" /></span>}
-            </div>
-          </nav>
-        ) : null}
+        <CatalogPagination currentPage={page} pageCount={pageCount} pageHref={pageHref} ariaLabel="Paginación pública" />
       </main>
     </div>
   )
