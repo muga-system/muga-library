@@ -9,8 +9,8 @@ function slugify(value: string) {
   return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")
 }
 
-function databaseRow(row: typeof databases.$inferSelect) {
-  return { ...row, database_id: row.id, owner_id: row.ownerId, is_public: row.isPublic, catalog_type: row.catalogType, library_visibility: row.libraryVisibility, created_at: row.createdAt, updated_at: row.updatedAt }
+function databaseRow(row: typeof databases.$inferSelect, recordsCount = 0) {
+  return { ...row, records_count: recordsCount, recordsCount, database_id: row.id, owner_id: row.ownerId, is_public: row.isPublic, catalog_type: row.catalogType, library_visibility: row.libraryVisibility, created_at: row.createdAt, updated_at: row.updatedAt }
 }
 
 function recordRow(row: typeof records.$inferSelect) {
@@ -21,7 +21,22 @@ function loanRow(row: typeof loans.$inferSelect, record?: ReturnType<typeof reco
   return { ...row, database_id: row.databaseId, record_id: row.recordId, rejection_reason: row.rejectionReason, approved_by: row.approvedBy, approved_at: row.approvedAt, created_at: row.createdAt, updated_at: row.updatedAt, databaseId: row.databaseId, recordId: row.recordId, borrowerType: row.borrowerType, borrowerName: row.borrowerName, borrowerCourse: row.borrowerCourse, borrowerDivision: row.borrowerDivision, borrowerDepartment: row.borrowerDepartment, loanDate: row.loanDate, dueDate: row.dueDate, returnDate: row.returnDate, rejectionReason: row.rejectionReason, approvedBy: row.approvedBy, approvedAt: row.approvedAt, createdAt: row.createdAt, updatedAt: row.updatedAt, record: record || null, records: record || null }
 }
 
-export async function getAllDatabases() { return db.select().from(databases).orderBy(desc(databases.createdAt)).all().map(databaseRow) }
+export async function getAllDatabases() {
+  const rows = db.select({
+    id: databases.id,
+    name: databases.name,
+    description: databases.description,
+    ownerId: databases.ownerId,
+    isPublic: databases.isPublic,
+    catalogType: databases.catalogType,
+    libraryVisibility: databases.libraryVisibility,
+    createdAt: databases.createdAt,
+    updatedAt: databases.updatedAt,
+    recordsCount: sql<number>`count(${records.id})`,
+  }).from(databases).leftJoin(records, eq(records.databaseId, databases.id)).groupBy(databases.id).orderBy(desc(databases.createdAt)).all()
+
+  return rows.map(({ recordsCount, ...row }) => databaseRow(row, Number(recordsCount) || 0))
+}
 export async function getAllRecords() { return db.select().from(records).orderBy(desc(records.createdAt)).all().map(recordRow) }
 export async function getDatabaseById(id: string) { const row = db.select().from(databases).where(eq(databases.id, id)).get(); return row ? databaseRow(row) : null }
 export async function getDatabaseByName(name: string) { const row = db.select().from(databases).where(eq(databases.name, name)).get(); return row ? databaseRow(row) : null }

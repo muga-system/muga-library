@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest"
-import { createDatabase, createLoan, createRecord, deleteDatabase, getDatabaseById, getRecordsByDatabase, getLoanStats } from "./database"
+import { createDatabase, createLoan, createRecord, deleteDatabase, getAllDatabases, getDatabaseById, getRecordsByDatabase, getLoanStats } from "./database"
 
 const createdDatabaseIds: string[] = []
 
@@ -24,6 +24,9 @@ describe("SQLite database service", () => {
     const result = await getRecordsByDatabase(database.id)
     expect(result.records).toHaveLength(1)
     expect(result.records[0].data).toEqual({ title: "Libro de prueba" })
+
+    const listedDatabase = (await getAllDatabases()).find((item) => item.id === database.id)
+    expect(listedDatabase?.records_count).toBe(1)
   })
 
   it("returns loan statistics", async () => {
