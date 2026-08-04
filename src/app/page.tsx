@@ -5,12 +5,13 @@ import {
   CheckCircle2,
   CircleUserRound,
   FileUp,
-  KeyRound,
   Library,
   Search,
   Users,
 } from "lucide-react"
 import { MugaHeader } from "@/components/muga-header"
+import { HomeAccountActions } from "@/components/home-account-actions"
+import { getCurrentUser } from "@/lib/auth/service"
 
 const capabilities = [
   {
@@ -57,7 +58,9 @@ const libraryFlow = [
   },
 ]
 
-export default function PublicLibraryHome() {
+export default async function PublicLibraryHome() {
+  const user = await getCurrentUser()
+
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950">
       <MugaHeader
@@ -69,10 +72,7 @@ export default function PublicLibraryHome() {
           </>
         }
         actions={
-          <Link href="/iniciar-sesion" className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
-            <KeyRound className="h-4 w-4" />
-            Iniciar sesión
-          </Link>
+          <HomeAccountActions initialUser={user} />
         }
       />
 
