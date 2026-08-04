@@ -105,12 +105,12 @@ export default async function PrestamosPage() {
       <main className="max-w-6xl mx-auto px-6 py-12">
         {/* Stats */}
         <div className="grid grid-cols-2 gap-4 mb-10 md:grid-cols-4">
-          <div className="p-6 bg-amber-50 rounded-xl border border-amber-200">
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 dark:border-amber-900/50 dark:bg-amber-950/20">
             <div className="flex items-center gap-3 mb-2">
-              <Clock className="h-5 w-5 text-amber-600" />
-              <span className="text-sm text-amber-700">Pendientes</span>
+              <Clock className="h-5 w-5 text-amber-600 dark:text-amber-300" />
+              <span className="text-sm text-amber-700 dark:text-amber-300">Pendientes</span>
             </div>
-            <div className="text-3xl font-semibold text-amber-800">{stats.requested}</div>
+            <div className="text-3xl font-semibold text-amber-800 dark:text-amber-200">{stats.requested}</div>
           </div>
 
           <div className="p-6 bg-slate-50 rounded-xl border border-slate-200">
