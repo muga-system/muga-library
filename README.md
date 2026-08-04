@@ -22,8 +22,10 @@ Copy `.env.example` to `.env.local` and set real values:
 - `ADMIN_BOOTSTRAP_SECRET` (optional but required to use `/api/create-admin`)
 - `ADMIN_EMAIL` (optional)
 - `ADMIN_PASSWORD` (required for `/api/create-admin`)
-- `RESEND_API_KEY` (required to deliver email notifications)
-- `EMAIL_FROM` (required sender address verified in Resend)
+- `HOSTINGER_EMAIL_API_URL` (optional; defaults to `https://api.mail.hostinger.com`)
+- `HOSTINGER_EMAIL_API_TOKEN` (required Hostinger Mail API bearer token)
+- `HOSTINGER_MAILBOX_RESOURCE_ID` (required resource ID of the Hostinger mailbox used to send mail)
+- `HOSTINGER_MAIL_DISPLAY_NAME` (optional sender display name; defaults to `MUGA`)
 - `COUPON_REQUEST_NOTIFICATION_EMAIL` (address that receives new library requests; falls back to `ADMIN_EMAIL`)
 - `NEXT_PUBLIC_APP_URL` (optional base URL included in email links)
 

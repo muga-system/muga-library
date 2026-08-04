@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: "La solicitud fue guardada, pero no se pudieron enviar los emails. Revisá la configuración de Resend.",
+          error: "La solicitud fue guardada, pero no se pudieron enviar los emails. Revisá la configuración de Hostinger Mail.",
           requestId: requestData.id,
         },
         { status: 502 }

@@ -20,7 +20,7 @@ La dirección de simplificación es:
 - Autenticación y autorización resueltas por el servidor, sin clientes de base
   de datos en el navegador.
 - Archivos subidos guardados fuera de la base, en un directorio configurable.
-- Resend permanece opcional y solo se usa para notificaciones de email.
+- Hostinger Mail API concentra el envío de notificaciones de email.
 
 ## Principios heredados de Muga Lab
 

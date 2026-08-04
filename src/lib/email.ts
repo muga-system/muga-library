@@ -1,13 +1,13 @@
-import { Resend } from "resend"
-
-const RESEND_API_KEY = process.env.RESEND_API_KEY?.trim()
-const EMAIL_FROM = process.env.EMAIL_FROM?.trim()
+const HOSTINGER_EMAIL_API_URL = (
+  process.env.HOSTINGER_EMAIL_API_URL || "https://api.mail.hostinger.com"
+).replace(/\/$/, "")
+const HOSTINGER_EMAIL_API_TOKEN = process.env.HOSTINGER_EMAIL_API_TOKEN?.trim()
+const HOSTINGER_MAILBOX_RESOURCE_ID = process.env.HOSTINGER_MAILBOX_RESOURCE_ID?.trim()
+const HOSTINGER_MAIL_DISPLAY_NAME = process.env.HOSTINGER_MAIL_DISPLAY_NAME?.trim() || "MUGA"
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://muga-library.vercel.app"
 
-console.log("📧 [INIT] RESEND_API_KEY exists:", !!RESEND_API_KEY)
-console.log("📧 [INIT] EMAIL_FROM configured:", !!EMAIL_FROM)
-
-const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null
+console.log("📧 [INIT] Hostinger Mail token exists:", !!HOSTINGER_EMAIL_API_TOKEN)
+console.log("📧 [INIT] Hostinger mailbox configured:", !!HOSTINGER_MAILBOX_RESOURCE_ID)
 
 interface SendEmailOptions {
   to: string
@@ -17,39 +17,46 @@ interface SendEmailOptions {
 }
 
 async function sendEmail({ to, subject, html, text }: SendEmailOptions): Promise<boolean> {
-  console.log("📧 [SEND] RESEND_API_KEY:", RESEND_API_KEY ? "present" : "MISSING")
-  console.log("📧 [SEND] resend instance:", resend ? "exists" : "null")
-
-  if (!resend) {
-    console.error("📧 [EMAIL ERROR] RESEND_API_KEY is not configured")
+  if (!HOSTINGER_EMAIL_API_TOKEN) {
+    console.error("📧 [EMAIL ERROR] HOSTINGER_EMAIL_API_TOKEN is not configured")
     return false
   }
 
-  if (!EMAIL_FROM) {
-    console.error("📧 [EMAIL ERROR] EMAIL_FROM is not configured")
+  if (!HOSTINGER_MAILBOX_RESOURCE_ID) {
+    console.error("📧 [EMAIL ERROR] HOSTINGER_MAILBOX_RESOURCE_ID is not configured")
     return false
   }
 
   try {
-    console.log("📧 [EMAIL] Sending to:", to, "from:", EMAIL_FROM)
+    const response = await fetch(
+      `${HOSTINGER_EMAIL_API_URL}/api/v1/mailboxes/${encodeURIComponent(HOSTINGER_MAILBOX_RESOURCE_ID)}/send`,
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${HOSTINGER_EMAIL_API_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          displayName: HOSTINGER_MAIL_DISPLAY_NAME,
+          html,
+          subject,
+          text: text || html.replace(/<[^>]*>/g, ""),
+          to: [to],
+        }),
+      }
+    )
 
-    const result = await resend.emails.send({
-      from: EMAIL_FROM,
-      to,
-      subject,
-      html,
-      text: text || html.replace(/<[^>]*>/g, ""),
-    })
-
-    if (result.error) {
-      console.error("📧 [EMAIL ERROR]", result.error)
+    if (!response.ok) {
+      const errorBody = await response.text()
+      console.error("📧 [HOSTINGER MAIL ERROR]", response.status, errorBody)
       return false
     }
 
-    console.log("📧 [EMAIL SENT]", result.data)
+    console.log("📧 [HOSTINGER MAIL SENT]", { to, subject })
     return true
   } catch (error) {
-    console.error("📧 [EMAIL ERROR]", error)
+    console.error("📧 [HOSTINGER MAIL ERROR]", error)
     return false
   }
 }
