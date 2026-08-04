@@ -10,6 +10,7 @@ import {
   ArrowRight,
   Building2,
   Clock,
+  Home,
 } from "lucide-react"
 import { AuthSignOutButton } from "@/components/auth-signout-button"
 import { MugaHeader } from "@/components/muga-header"
@@ -58,8 +59,16 @@ export default async function AdminPage() {
         <MugaHeader
           title="Panel Administrativo"
           subtitle="Gestión Bibliotecaria"
-          homeHref="/admin"
-          actions={<AuthSignOutButton initialAuthenticated={Boolean(user)} />}
+          homeHref="/"
+          actions={
+            <div className="flex items-center gap-2">
+              <Link href="/" className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+                <Home className="h-4 w-4" />
+                Inicio
+              </Link>
+              <AuthSignOutButton initialAuthenticated={Boolean(user)} />
+            </div>
+          }
         />
 
         <main className="mx-auto max-w-6xl px-6 py-12">

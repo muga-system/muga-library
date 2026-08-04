@@ -5,14 +5,14 @@ import { PublicCatalogCards } from "./public-catalog-cards"
 import { MugaHeader } from "@/components/muga-header"
 import { CatalogPagination } from "@/components/catalog-pagination"
 import { getCurrentUser, type AuthUser } from "@/lib/auth/service"
+import { HomeAccountActions } from "@/components/home-account-actions"
 
 function PublicHeader({ user }: { user: AuthUser | null }) {
-  const isReader = user?.app_metadata.role === "reader"
   return (
     <MugaHeader
       subtitle="Catálogos públicos"
       navigation={<Link href="/" className="hover:text-slate-900 dark:hover:text-slate-200">Conocer MUGA</Link>}
-      actions={<Link href={user ? (isReader ? "/mis-solicitudes" : "/admin") : "/iniciar-sesion"} className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">{user ? (isReader ? "Mis préstamos" : "Ir al panel") : "Iniciar sesión"}</Link>}
+      actions={<HomeAccountActions initialUser={user} />}
     />
   )
 }
