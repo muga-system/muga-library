@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createCouponRequest } from "@/lib/services/coupons"
-import { sendCouponRequestReceivedEmail } from "@/lib/email"
+import {
+  sendCouponRequestAdminNotificationEmail,
+  sendCouponRequestReceivedEmail,
+} from "@/lib/email"
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,19 +26,32 @@ export async function POST(request: NextRequest) {
       )
     }
 
-  // Create request
-  const requestData = await createCouponRequest({
-    email,
-    libraryName,
-    description,
-  })
+    const requestData = await createCouponRequest({
+      email,
+      libraryName,
+      description,
+    })
 
-  console.log("📧 [COUPON REQUEST] Sending email to:", email)
-  
-  // Send confirmation email
-  const emailSent = await sendCouponRequestReceivedEmail(email, libraryName)
-  
-  console.log("📧 [COUPON REQUEST] Email sent:", emailSent)
+    const [requesterEmailSent, adminEmailSent] = await Promise.all([
+      sendCouponRequestReceivedEmail(email, libraryName),
+      sendCouponRequestAdminNotificationEmail(email, libraryName, description),
+    ])
+
+    console.log("📧 [COUPON REQUEST] Email delivery:", {
+      requesterEmailSent,
+      adminEmailSent,
+    })
+
+    if (!requesterEmailSent || !adminEmailSent) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "La solicitud fue guardada, pero no se pudieron enviar los emails. Revisá la configuración de Resend.",
+          requestId: requestData.id,
+        },
+        { status: 502 }
+      )
+    }
 
     return NextResponse.json({
       success: true,

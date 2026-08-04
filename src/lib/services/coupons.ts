@@ -1,6 +1,7 @@
 import { and, desc, eq, sql } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { coupons, couponRequests, databases, profiles } from "@/lib/db/schema"
+import { sendCouponApprovedEmail } from "@/lib/email"
 
 export type Coupon = typeof coupons.$inferSelect
 export type Profile = typeof profiles.$inferSelect
@@ -80,18 +81,24 @@ export async function getCouponRequests(status?: string) {
   return db.select().from(couponRequests).where(condition).orderBy(desc(couponRequests.requestedAt)).all()
 }
 
-export async function processCouponRequest(requestId: string, action: "approve" | "reject", adminId: string, adminNotes?: string): Promise<Coupon | null> {
+export type ProcessCouponRequestResult = {
+  coupon: Coupon | null
+  emailSent: boolean
+}
+
+export async function processCouponRequest(requestId: string, action: "approve" | "reject", adminId: string, adminNotes?: string): Promise<ProcessCouponRequestResult> {
   const request = db.select().from(couponRequests).where(eq(couponRequests.id, requestId)).get()
   if (!request) throw new Error("Solicitud no encontrada")
   const processedAt = new Date().toISOString()
   if (action === "reject") {
     db.update(couponRequests).set({ status: "rejected", processedBy: adminId, processedAt, adminNotes: adminNotes || null }).where(eq(couponRequests.id, requestId)).run()
-    return null
+    return { coupon: null, emailSent: true }
   }
   const couponCode = generateCouponCode()
   const [coupon] = db.insert(coupons).values({ code: couponCode, createdBy: adminId, expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() }).returning().all()
   db.update(couponRequests).set({ status: "approved", processedBy: adminId, processedAt, adminNotes: `Cupón generado: ${couponCode}. ${adminNotes || ""}` }).where(eq(couponRequests.id, requestId)).run()
-  return coupon
+  const emailSent = await sendCouponApprovedEmail(request.email, request.libraryName, couponCode)
+  return { coupon, emailSent }
 }
 
 function generateCouponCode() {

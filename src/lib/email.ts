@@ -1,11 +1,11 @@
 import { Resend } from "resend"
 
-const RESEND_API_KEY = process.env.RESEND_API_KEY
-const EMAIL_FROM = process.env.EMAIL_FROM || "onboarding@resend.dev"
+const RESEND_API_KEY = process.env.RESEND_API_KEY?.trim()
+const EMAIL_FROM = process.env.EMAIL_FROM?.trim()
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://muga-library.vercel.app"
 
 console.log("📧 [INIT] RESEND_API_KEY exists:", !!RESEND_API_KEY)
-console.log("📧 [INIT] EMAIL_FROM:", EMAIL_FROM)
+console.log("📧 [INIT] EMAIL_FROM configured:", !!EMAIL_FROM)
 
 const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null
 
@@ -19,16 +19,21 @@ interface SendEmailOptions {
 async function sendEmail({ to, subject, html, text }: SendEmailOptions): Promise<boolean> {
   console.log("📧 [SEND] RESEND_API_KEY:", RESEND_API_KEY ? "present" : "MISSING")
   console.log("📧 [SEND] resend instance:", resend ? "exists" : "null")
-  
+
   if (!resend) {
-    console.log("📧 [EMAIL DEBUG - NO RESEND]", { to, subject })
-    return true
+    console.error("📧 [EMAIL ERROR] RESEND_API_KEY is not configured")
+    return false
+  }
+
+  if (!EMAIL_FROM) {
+    console.error("📧 [EMAIL ERROR] EMAIL_FROM is not configured")
+    return false
   }
 
   try {
     console.log("📧 [EMAIL] Sending to:", to, "from:", EMAIL_FROM)
 
-    const data = await resend.emails.send({
+    const result = await resend.emails.send({
       from: EMAIL_FROM,
       to,
       subject,
@@ -36,12 +41,30 @@ async function sendEmail({ to, subject, html, text }: SendEmailOptions): Promise
       text: text || html.replace(/<[^>]*>/g, ""),
     })
 
-    console.log("📧 [EMAIL SENT]", data)
+    if (result.error) {
+      console.error("📧 [EMAIL ERROR]", result.error)
+      return false
+    }
+
+    console.log("📧 [EMAIL SENT]", result.data)
     return true
   } catch (error) {
     console.error("📧 [EMAIL ERROR]", error)
     return false
   }
+}
+
+function escapeHtml(value: string) {
+  return value.replace(/[&<>"']/g, (character) => {
+    const entities: Record<string, string> = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    }
+    return entities[character]
+  })
 }
 
 export async function sendCredentialsEmail(
@@ -134,6 +157,7 @@ export async function sendCouponApprovedEmail(
   couponCode: string
 ): Promise<boolean> {
   const subject = `Tu código de activación - ${libraryName} | MUGA`
+  const safeLibraryName = escapeHtml(libraryName)
 
   const html = `
 <!DOCTYPE html>
@@ -166,7 +190,7 @@ export async function sendCouponApprovedEmail(
         </h2>
 
         <p style="margin: 0 0 32px; color: #475569; font-size: 16px; line-height: 1.6;">
-          Tu solicitud para <strong>${libraryName}</strong> ha sido aprobada.
+          Tu solicitud para <strong>${safeLibraryName}</strong> ha sido aprobada.
         </p>
 
         <!-- Coupon Box -->
@@ -206,6 +230,7 @@ export async function sendCouponRequestReceivedEmail(
   libraryName: string
 ): Promise<boolean> {
   const subject = `Solicitud recibida - ${libraryName} | MUGA`
+  const safeLibraryName = escapeHtml(libraryName)
 
   const html = `
 <!DOCTYPE html>
@@ -227,7 +252,7 @@ export async function sendCouponRequestReceivedEmail(
         </h2>
 
         <p style="margin: 0 0 32px; color: #475569; font-size: 16px; line-height: 1.6;">
-          Tu solicitud para <strong>${libraryName}</strong> ha sido recibida.<br/>
+          Tu solicitud para <strong>${safeLibraryName}</strong> ha sido recibida.<br/>
           Te notificaremos por email cuando sea procesada.
         </p>
 
@@ -242,4 +267,53 @@ export async function sendCouponRequestReceivedEmail(
   `
 
   return sendEmail({ to: email, subject, html })
+}
+
+export async function sendCouponRequestAdminNotificationEmail(
+  requesterEmail: string,
+  libraryName: string,
+  description?: string
+): Promise<boolean> {
+  const notificationEmail =
+    process.env.COUPON_REQUEST_NOTIFICATION_EMAIL?.trim() || process.env.ADMIN_EMAIL?.trim()
+
+  if (!notificationEmail) {
+    console.error("📧 [EMAIL ERROR] COUPON_REQUEST_NOTIFICATION_EMAIL is not configured")
+    return false
+  }
+
+  const subject = `Nueva solicitud de incorporación - ${libraryName} | MUGA`
+  const safeRequesterEmail = escapeHtml(requesterEmail)
+  const safeLibraryName = escapeHtml(libraryName)
+  const safeDescription = escapeHtml(description?.trim() || "Sin descripción")
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f8fafc;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+    <div style="background: white; border-radius: 16px; padding: 40px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+      <h1 style="margin: 0 0 24px; font-size: 24px; color: #0f172a;">Nueva solicitud de incorporación</h1>
+      <p style="margin: 0 0 24px; color: #475569; font-size: 16px; line-height: 1.6;">
+        Se recibió una solicitud para incorporar una biblioteca a MUGA.
+      </p>
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; color: #334155; font-size: 15px; line-height: 1.6;">
+        <p style="margin: 0 0 12px;"><strong>Biblioteca:</strong> ${safeLibraryName}</p>
+        <p style="margin: 0 0 12px;"><strong>Contacto:</strong> ${safeRequesterEmail}</p>
+        <p style="margin: 0;"><strong>Descripción:</strong> ${safeDescription}</p>
+      </div>
+      <p style="margin: 24px 0 0; color: #94a3b8; font-size: 13px;">
+        Revisá la solicitud desde el panel administrativo de MUGA.
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+  `
+
+  return sendEmail({ to: notificationEmail, subject, html })
 }

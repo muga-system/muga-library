@@ -21,8 +21,8 @@ export async function POST(request: NextRequest) {
   const auth = await requireAdmin(); if (auth.response) return auth.response
   const body = await request.json().catch(() => ({}))
   if (!body.requestId || !body.action) return NextResponse.json({ error: "Parámetros incompletos" }, { status: 400 })
-  const coupon = await processCouponRequest(body.requestId, body.action, auth.user!.id, body.adminNotes)
-  return NextResponse.json({ success: true, coupon })
+  const result = await processCouponRequest(body.requestId, body.action, auth.user!.id, body.adminNotes)
+  return NextResponse.json({ success: true, coupon: result.coupon, emailSent: result.emailSent })
 }
 
 export async function PUT(request: NextRequest) {

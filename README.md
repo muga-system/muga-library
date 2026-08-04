@@ -22,6 +22,10 @@ Copy `.env.example` to `.env.local` and set real values:
 - `ADMIN_BOOTSTRAP_SECRET` (optional but required to use `/api/create-admin`)
 - `ADMIN_EMAIL` (optional)
 - `ADMIN_PASSWORD` (required for `/api/create-admin`)
+- `RESEND_API_KEY` (required to deliver email notifications)
+- `EMAIL_FROM` (required sender address verified in Resend)
+- `COUPON_REQUEST_NOTIFICATION_EMAIL` (address that receives new library requests; falls back to `ADMIN_EMAIL`)
+- `NEXT_PUBLIC_APP_URL` (optional base URL included in email links)
 
 ## Local setup (under 10 minutes)
 1. `pnpm install`

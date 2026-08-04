@@ -48,7 +48,7 @@ export default function RequestCouponPage() {
       <div className="min-h-screen bg-white dark:bg-slate-950">
         <MugaHeader subtitle="Incorporación de bibliotecas" />
 
-        <main className="mx-auto flex max-w-6xl justify-center px-6 py-12">
+        <main className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-6xl items-center justify-center px-6 py-12">
           <section className="w-full max-w-md rounded-xl border border-slate-200 bg-slate-50 p-8 text-center dark:border-slate-800 dark:bg-slate-900">
             <div className="mx-auto mb-6 flex h-12 w-12 items-center justify-center rounded-lg bg-slate-900 dark:bg-slate-800">
               <CheckCircle className="h-6 w-6 text-white" />
