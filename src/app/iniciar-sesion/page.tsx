@@ -1,14 +1,12 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { ArrowRight, BookOpen, Library, Loader2, Users } from "lucide-react"
 import { signInWithEmail } from "@/lib/auth/client"
 import { MugaHeader } from "@/components/muga-header"
 
 export default function IniciarSesionPage() {
-  const router = useRouter()
   const [nextPath, setNextPath] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -36,7 +34,9 @@ export default function IniciarSesionPage() {
 
     if (data?.session) {
       const role = data.user.app_metadata.role
-      router.replace(nextPath || (role === "reader" ? "/mis-solicitudes" : "/admin"))
+      const destination = nextPath || (role === "reader" ? "/mis-solicitudes" : "/admin")
+      window.location.assign(destination)
+      return
     } else {
       setError("Error al iniciar sesión")
     }

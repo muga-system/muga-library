@@ -1,14 +1,12 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { BookOpen, CheckCircle2, Loader2 } from "lucide-react"
 import { signUpWithEmail } from "@/lib/auth/client"
 import { MugaHeader } from "@/components/muga-header"
 
 export default function RegistroPage() {
-  const router = useRouter()
   const [nextPath, setNextPath] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -51,7 +49,7 @@ export default function RegistroPage() {
       return
     }
 
-    router.replace(nextPath || "/catalogo")
+    window.location.assign(nextPath || "/catalogo")
   }
 
   return (
