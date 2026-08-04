@@ -1,13 +1,31 @@
-const HOSTINGER_EMAIL_API_URL = (
-  process.env.HOSTINGER_EMAIL_API_URL || "https://api.mail.hostinger.com"
-).replace(/\/$/, "")
-const HOSTINGER_EMAIL_API_TOKEN = process.env.HOSTINGER_EMAIL_API_TOKEN?.trim()
-const HOSTINGER_MAILBOX_RESOURCE_ID = process.env.HOSTINGER_MAILBOX_RESOURCE_ID?.trim()
+import nodemailer from "nodemailer"
+
+const HOSTINGER_SMTP_HOST = process.env.HOSTINGER_SMTP_HOST?.trim() || "smtp.hostinger.com"
+const HOSTINGER_SMTP_PORT = Number.parseInt(process.env.HOSTINGER_SMTP_PORT || "465", 10)
+const HOSTINGER_SMTP_SECURE = (process.env.HOSTINGER_SMTP_SECURE || "true").toLowerCase() === "true"
+const HOSTINGER_SMTP_USER = process.env.HOSTINGER_SMTP_USER?.trim()
+const HOSTINGER_SMTP_PASSWORD = process.env.HOSTINGER_SMTP_PASSWORD?.trim()
 const HOSTINGER_MAIL_DISPLAY_NAME = process.env.HOSTINGER_MAIL_DISPLAY_NAME?.trim() || "MUGA"
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://muga-library.vercel.app"
 
-console.log("📧 [INIT] Hostinger Mail token exists:", !!HOSTINGER_EMAIL_API_TOKEN)
-console.log("📧 [INIT] Hostinger mailbox configured:", !!HOSTINGER_MAILBOX_RESOURCE_ID)
+console.log("📧 [INIT] Hostinger SMTP user configured:", !!HOSTINGER_SMTP_USER)
+console.log("📧 [INIT] Hostinger SMTP password exists:", !!HOSTINGER_SMTP_PASSWORD)
+
+const smtpTransporter =
+  HOSTINGER_SMTP_USER && HOSTINGER_SMTP_PASSWORD
+    ? nodemailer.createTransport({
+        auth: {
+          pass: HOSTINGER_SMTP_PASSWORD,
+          user: HOSTINGER_SMTP_USER,
+        },
+        connectionTimeout: 10000,
+        host: HOSTINGER_SMTP_HOST,
+        greetingTimeout: 10000,
+        port: HOSTINGER_SMTP_PORT,
+        secure: HOSTINGER_SMTP_SECURE,
+        socketTimeout: 15000,
+      })
+    : null
 
 interface SendEmailOptions {
   to: string
@@ -17,46 +35,32 @@ interface SendEmailOptions {
 }
 
 async function sendEmail({ to, subject, html, text }: SendEmailOptions): Promise<boolean> {
-  if (!HOSTINGER_EMAIL_API_TOKEN) {
-    console.error("📧 [EMAIL ERROR] HOSTINGER_EMAIL_API_TOKEN is not configured")
+  if (!HOSTINGER_SMTP_USER) {
+    console.error("📧 [EMAIL ERROR] HOSTINGER_SMTP_USER is not configured")
     return false
   }
 
-  if (!HOSTINGER_MAILBOX_RESOURCE_ID) {
-    console.error("📧 [EMAIL ERROR] HOSTINGER_MAILBOX_RESOURCE_ID is not configured")
+  if (!HOSTINGER_SMTP_PASSWORD || !smtpTransporter) {
+    console.error("📧 [EMAIL ERROR] HOSTINGER_SMTP_PASSWORD is not configured")
     return false
   }
 
   try {
-    const response = await fetch(
-      `${HOSTINGER_EMAIL_API_URL}/api/v1/mailboxes/${encodeURIComponent(HOSTINGER_MAILBOX_RESOURCE_ID)}/send`,
-      {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${HOSTINGER_EMAIL_API_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          displayName: HOSTINGER_MAIL_DISPLAY_NAME,
-          html,
-          subject,
-          text: text || html.replace(/<[^>]*>/g, ""),
-          to: [to],
-        }),
-      }
-    )
+    await smtpTransporter.sendMail({
+      from: {
+        address: HOSTINGER_SMTP_USER,
+        name: HOSTINGER_MAIL_DISPLAY_NAME,
+      },
+      html,
+      subject,
+      text: text || html.replace(/<[^>]*>/g, ""),
+      to,
+    })
 
-    if (!response.ok) {
-      const errorBody = await response.text()
-      console.error("📧 [HOSTINGER MAIL ERROR]", response.status, errorBody)
-      return false
-    }
-
-    console.log("📧 [HOSTINGER MAIL SENT]", { to, subject })
+    console.log("📧 [HOSTINGER SMTP SENT]", { to, subject })
     return true
   } catch (error) {
-    console.error("📧 [HOSTINGER MAIL ERROR]", error)
+    console.error("📧 [HOSTINGER SMTP ERROR]", error)
     return false
   }
 }
