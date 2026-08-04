@@ -6,7 +6,6 @@ import {
   Plus,
   Upload,
   Tags,
-  Users,
   Settings,
   ArrowRight,
   Building2,
@@ -15,6 +14,8 @@ import {
 import { AuthSignOutButton } from "@/components/auth-signout-button"
 import { MugaHeader } from "@/components/muga-header"
 import { getAllDatabases, getAllRecords, getLoanStats } from "@/lib/services/database"
+import { getCurrentUser, isRequestsAdmin } from "@/lib/auth/service"
+import { AdminIncorporacionesPanel } from "@/components/admin-incorporaciones-panel"
 
 function toSlug(name: string): string {
   return name
@@ -46,6 +47,9 @@ async function getDatabases() {
 }
 
 export default async function AdminPage() {
+  const user = await getCurrentUser()
+  if (isRequestsAdmin(user)) return <AdminIncorporacionesPanel initialAuthenticated={Boolean(user)} />
+
   const stats = await getStats()
   const databases = await getDatabases()
 
@@ -55,7 +59,7 @@ export default async function AdminPage() {
           title="Panel Administrativo"
           subtitle="Gestión Bibliotecaria"
           homeHref="/admin"
-          actions={<AuthSignOutButton />}
+          actions={<AuthSignOutButton initialAuthenticated={Boolean(user)} />}
         />
 
         <main className="mx-auto max-w-6xl px-6 py-12">
@@ -64,7 +68,7 @@ export default async function AdminPage() {
             <p className="text-slate-500">Gestiona bibliotecas, registros y préstamos</p>
           </div>
 
-          <div className="mb-10 grid grid-cols-2 gap-4 md:grid-cols-4">
+          <div className="mb-10 grid grid-cols-2 gap-4 md:grid-cols-3">
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
               <div className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{stats.databases}</div>
               <div className="text-sm text-slate-500">Catálogos</div>
@@ -78,11 +82,6 @@ export default async function AdminPage() {
               <div className="text-sm text-slate-500">Préstamos activos</div>
               <div className="mt-1 text-xs text-slate-500">Vencidos: <span className="font-medium text-slate-700 dark:text-slate-300">{stats.overdue}</span></div>
             </div>
-            <Link href="/admin/solicitudes" className="rounded-lg border border-amber-200 bg-amber-50 p-4 transition-all hover:border-amber-300 dark:border-amber-900/40 dark:bg-amber-950/20">
-              <div className="text-2xl font-semibold text-amber-800 dark:text-amber-200">{stats.requested}</div>
-              <div className="text-sm text-amber-700 dark:text-amber-300">Solicitudes pendientes</div>
-              <div className="mt-1 text-xs text-amber-700/80 dark:text-amber-300/80">Revisar ahora →</div>
-            </Link>
           </div>
 
           <div className="mb-10 grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -112,6 +111,7 @@ export default async function AdminPage() {
               <h3 className="mb-1 font-medium text-slate-900 dark:text-slate-100">Importar</h3>
               <p className="text-sm text-slate-500">Cargar datos CSV y Excel</p>
             </Link>
+
           </div>
 
           <div className="mb-10">

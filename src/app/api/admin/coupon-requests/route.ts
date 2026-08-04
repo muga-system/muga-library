@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { coupons } from "@/lib/db/schema"
-import { getCurrentUser, isAdmin } from "@/lib/auth/service"
+import { canManageCouponRequests, getCurrentUser } from "@/lib/auth/service"
 import { getCouponRequests, processCouponRequest } from "@/lib/services/coupons"
 
 async function requireAdmin() {
   const user = await getCurrentUser()
   if (!user) return { user: null, response: NextResponse.json({ error: "No autorizado" }, { status: 401 }) }
-  if (!isAdmin(user)) return { user: null, response: NextResponse.json({ error: "Solo administradores" }, { status: 403 }) }
+  if (!canManageCouponRequests(user)) return { user: null, response: NextResponse.json({ error: "No tenés permisos para administrar incorporaciones" }, { status: 403 }) }
   return { user, response: null }
 }
 
