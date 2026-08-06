@@ -1,4 +1,4 @@
-import Database from "better-sqlite3"
+import { DatabaseSync } from "node:sqlite"
 import sharp from "sharp"
 import { mkdir, writeFile } from "node:fs/promises"
 import { join, resolve } from "node:path"
@@ -10,7 +10,7 @@ const databasePath = resolve(process.cwd(), "data/muga-library.db")
 const outputDirectory = resolve(process.cwd(), "data/uploads/book-covers/catalog")
 const publicPrefix = "/api/uploads/book-covers/catalog"
 
-const sqlite = new Database(databasePath)
+const sqlite = new DatabaseSync(databasePath)
 const rows = sqlite.prepare("SELECT id, data FROM records WHERE json_extract(data, '$.cover_url') IS NULL OR json_extract(data, '$.cover_url') = '' ORDER BY created_at ASC LIMIT ?").all(limit)
 const update = sqlite.prepare("UPDATE records SET data = json_set(data, '$.cover_url', ?), updated_at = ? WHERE id = ?")
 

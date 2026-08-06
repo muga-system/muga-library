@@ -1,7 +1,8 @@
-import Database from "better-sqlite3"
 import { mkdirSync } from "node:fs"
 import { dirname, resolve } from "node:path"
 import { drizzle } from "drizzle-orm/better-sqlite3"
+import type { Database as BetterSqliteDatabase } from "better-sqlite3"
+import { NodeSqliteDatabase } from "./node-sqlite"
 import * as schema from "./schema"
 
 function getDatabasePath() {
@@ -13,9 +14,9 @@ function getDatabasePath() {
 const databasePath = getDatabasePath()
 mkdirSync(dirname(databasePath), { recursive: true })
 
-const sqlite = new Database(databasePath)
+const sqlite = new NodeSqliteDatabase(databasePath)
 sqlite.pragma("foreign_keys = ON")
 sqlite.pragma("journal_mode = WAL")
 
-export const db = drizzle(sqlite, { schema })
+export const db = drizzle(sqlite as unknown as BetterSqliteDatabase, { schema })
 export { sqlite }

@@ -1,7 +1,7 @@
 import { cp, mkdir, readFile, writeFile } from "node:fs/promises"
 import { existsSync } from "node:fs"
 import { join, resolve } from "node:path"
-import Database from "better-sqlite3"
+import { DatabaseSync } from "node:sqlite"
 
 function dataPath(value, fallback) {
   const raw = (value || fallback).replace(/^file:/, "")
@@ -19,9 +19,10 @@ const destinationUploads = join(destination, "uploads")
 if (!existsSync(databasePath)) throw new Error(`Database not found: ${databasePath}`)
 await mkdir(destination, { recursive: true })
 
-const database = new Database(databasePath, { readonly: true })
+const database = new DatabaseSync(databasePath)
 try {
-  await database.backup(destinationDatabase)
+  const escapedDestination = destinationDatabase.replaceAll("'", "''")
+  database.exec(`VACUUM INTO '${escapedDestination}'`)
 } finally {
   database.close()
 }
