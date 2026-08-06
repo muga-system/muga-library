@@ -4,6 +4,8 @@ import { isAdmin } from "@/lib/auth/service"
 import { apiError, apiSuccess, parseJsonBody } from "@/lib/api/http"
 import { createRecordSchema, recordsQuerySchema, batchCreateRecordsSchema } from "@/lib/api/schemas"
 
+export const dynamic = "force-dynamic"
+
 export async function GET(request: Request) {
   const auth = await requireApiStaff()
   if (!auth.ok) return auth.response

@@ -4,6 +4,8 @@ import { updateSettingsSchema } from "@/lib/api/schemas"
 import { getLoanConfig, upsertLoanConfigEntries } from "@/lib/services/database"
 import { getProfileById, updateProfile } from "@/lib/services/profiles"
 
+export const dynamic = "force-dynamic"
+
 const DEFAULT_SETTINGS = {
   notificaciones: true,
   emailNotifications: true,

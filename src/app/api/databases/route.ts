@@ -4,6 +4,8 @@ import { requireApiStaff } from "@/lib/api/auth"
 import { isAdmin } from "@/lib/auth/service"
 import { createDatabaseSchema } from "@/lib/api/schemas"
 
+export const dynamic = "force-dynamic"
+
 export async function GET() {
   const auth = await requireApiStaff()
   if (!auth.ok) return auth.response

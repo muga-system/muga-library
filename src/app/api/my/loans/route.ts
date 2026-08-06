@@ -2,6 +2,8 @@ import { getMyLoans } from "@/lib/services/database"
 import { requireApiUser } from "@/lib/api/auth"
 import { apiError, apiSuccess } from "@/lib/api/http"
 
+export const dynamic = "force-dynamic"
+
 export async function GET() {
   const auth = await requireApiUser()
   if (!auth.ok) return auth.response

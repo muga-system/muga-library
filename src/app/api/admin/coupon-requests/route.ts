@@ -6,6 +6,8 @@ import { getCouponRequests, processCouponRequest } from "@/lib/services/coupons"
 import { parseJsonBody } from "@/lib/api/http"
 import { manualCouponSchema, processCouponRequestSchema } from "@/lib/api/schemas"
 
+export const dynamic = "force-dynamic"
+
 async function requireAdmin() {
   const user = await getCurrentUser()
   if (!user) return { user: null, response: NextResponse.json({ error: "No autorizado" }, { status: 401 }) }

@@ -2,6 +2,8 @@ import { readFile } from "node:fs/promises"
 import { join, resolve, sep } from "node:path"
 import { NextResponse } from "next/server"
 
+export const dynamic = "force-dynamic"
+
 const contentTypes: Record<string, string> = { jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp", gif: "image/gif" }
 
 export async function GET(_request: Request, { params }: { params: Promise<{ path: string[] }> }) {
