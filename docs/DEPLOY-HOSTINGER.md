@@ -24,7 +24,7 @@ En Hostinger crear una aplicación Node.js con estos valores iniciales:
 
 | Campo | Valor |
 |---|---|
-| Versión de Node | 22 |
+| Versión de Node | 20 |
 | Build command | `corepack enable && pnpm install --frozen-lockfile && pnpm build` |
 | Start command | `pnpm start` |
 | Application root | raíz del repositorio |
@@ -63,6 +63,8 @@ pnpm db:migrate
 ```
 
 La migración es idempotente porque `scripts/migrate-db.ts` registra cada archivo aplicado en SQLite.
+
+La aplicación fija `better-sqlite3` en `8.2.0` y Node 20 porque el entorno Linux de Hostinger usa glibc 2.28; las versiones posteriores de `better-sqlite3` publican binarios que requieren glibc más reciente y el fallback de compilación del servidor no es compatible con su Python 3.6.
 
 ## 4. Dominio y primera comprobación
 
