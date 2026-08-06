@@ -16,7 +16,9 @@ mkdirSync(dirname(databasePath), { recursive: true })
 
 const sqlite = new NodeSqliteDatabase(databasePath)
 sqlite.pragma("foreign_keys = ON")
-sqlite.pragma("journal_mode = WAL")
+if (process.env.NEXT_PHASE !== "phase-production-build") {
+  sqlite.pragma("journal_mode = WAL")
+}
 
 export const db = drizzle(sqlite as unknown as BetterSqliteDatabase, { schema })
 export { sqlite }
