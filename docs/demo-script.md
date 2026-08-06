@@ -1,27 +1,29 @@
-# Demo Script (3 minutes)
+# Guion de demo (3 minutos)
 
-## Goal
-Show complete value quickly: login, catalog management, record creation, loan lifecycle, and search.
+## Objetivo
+Mostrar rápidamente el valor completo: login, gestión del catálogo, alta de
+registros, ciclo del préstamo y búsqueda.
 
-## Pre-demo checklist
-- Deploy preview is healthy.
-- Demo seed is loaded (`supabase/seeds/demo_seed.sql`).
-- Demo user can login.
-- Browser starts at `/iniciar-sesion`.
+## Preparación
+- La aplicación está saludable en el entorno de prueba.
+- Las migraciones SQLite están aplicadas (`pnpm db:migrate`).
+- Existe un administrador creado mediante el bootstrap protegido.
+- No hay credenciales de demo versionadas.
+- El navegador empieza en `/iniciar-sesion`.
 
-## Script
-1. Login with demo user and open dashboard.
-2. Go to `Bases de Datos` and show existing `Catalogo General`.
-3. Open catalog and create one new record with title/author/ISBN.
-4. Go to `Prestamos > Nuevo Prestamo` and register a loan for that record.
-5. Open loan detail and click return action.
-6. Go to `Buscar` and find the record by title.
+## Secuencia
+1. Iniciar sesión y abrir el panel.
+2. Ir a `Bases de Datos`.
+3. Crear un registro con título, autor e ISBN.
+4. Ir a `Préstamos > Nuevo préstamo` y registrar el préstamo.
+5. Abrir el detalle y ejecutar la devolución.
+6. Ir a `Buscar` y encontrar el registro por título.
 
-## Expected outcomes
-- Stats update in dashboard and loans page.
-- Loan status changes from `activo` to `devuelto`.
-- Search returns seeded and newly created records.
+## Resultado esperado
+- Las estadísticas se actualizan en el panel y en préstamos.
+- El estado cambia de `activo` a `devuelto`.
+- La búsqueda devuelve el registro creado.
 
-## Backup plan
-- If API fails, show the global error page and use `Reintentar`.
-- If seed was not loaded, create one record manually and continue script.
+## Plan B
+- Si falla la API, mostrar la página de error global y usar `Reintentar`.
+- Si el catálogo está vacío, crear un registro manualmente y continuar.

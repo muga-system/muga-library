@@ -88,7 +88,7 @@ export default function EditarRegistroPage({ params }: Props) {
       setFormData((prev) => ({ ...prev, cover_url: url }))
       notifications.success("Portada cargada", "Guarda cambios para aplicar la nueva portada.")
     } catch (error) {
-      notifications.error("No se pudo subir la portada", "Verifica bucket y permisos de Storage.")
+      notifications.error("No se pudo subir la portada", "Verificá el directorio de almacenamiento y sus permisos.")
     } finally {
       setUploadingCover(false)
     }

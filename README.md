@@ -2,7 +2,7 @@
 
 Modern library management app (Next.js + SQLite + Drizzle) inspired by J-ISIS workflows.
 
-La dirección propuesta para simplificar la infraestructura está documentada en
+La arquitectura actual y sus límites de despliegue están documentados en
 [`docs/architecture.md`](docs/architecture.md).
 
 ## Stack
@@ -62,18 +62,6 @@ La instalación pública prevista es [bibliotecas.muga.dev](https://bibliotecas.
 
 La guía operativa está en [docs/DEPLOY-HOSTINGER.md](docs/DEPLOY-HOSTINGER.md). Incluye variables de entorno, migraciones, health-check, backups y restauración.
 
-## Deploy on a persistent Node server
-1. Push repository to GitHub.
-2. Configure `.env.local` with a writable `DATABASE_URL`.
-3. Run `pnpm install --frozen-lockfile` and `pnpm db:migrate`.
-4. Build with `pnpm build` and start with `pnpm start`.
-5. Run smoke test flow:
-   1. Login
-   2. Create database
-   3. Create record
-   4. Create and return loan
-   5. Search record
-
 ## CI
 GitHub Actions workflow: `.github/workflows/ci.yml`
 
@@ -84,13 +72,8 @@ Pipeline steps:
 - `pnpm test:run`
 - `pnpm build`
 
-## Demo credentials and flow
-- Keep demo credentials in your secure environment manager.
-- Do not store real credentials in repo.
-- Use `docs/demo-script.md` for the 3-minute presentation flow.
-
-## Legacy migrations
-
-The original PostgreSQL/Supabase migrations remain in `supabase/migrations/`
-as historical reference. New environments use the Drizzle migrations in
-`drizzle/`.
+## Demo y operación
+- No hay credenciales ni seeds de demo dentro del repositorio.
+- Para una demostración, creá el administrador con el bootstrap seguro y
+  cargá un catálogo desde la interfaz.
+- El flujo breve está en `docs/demo-script.md`.

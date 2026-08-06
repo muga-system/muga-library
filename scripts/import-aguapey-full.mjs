@@ -3,9 +3,13 @@ import Papa from "papaparse"
 
 const baseUrl = process.env.MUGA_URL || "http://localhost:3000"
 const csvPath = process.argv[2] || "data/import/aguapey/aguapey-completo.csv"
-const email = process.env.ADMIN_EMAIL || "demo@muga.local"
-const password = process.env.ADMIN_PASSWORD || "MugaDemo123!"
-const catalogName = "Aguapey - Migración completa"
+const email = process.env.ADMIN_EMAIL
+const password = process.env.ADMIN_PASSWORD
+const catalogName = process.env.MUGA_CATALOG_NAME || "Catálogo importado"
+
+if (!email || !password) {
+  throw new Error("ADMIN_EMAIL y ADMIN_PASSWORD son obligatorios para importar datos")
+}
 
 function body(response) {
   return response.json()

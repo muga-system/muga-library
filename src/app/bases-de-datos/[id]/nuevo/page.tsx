@@ -54,7 +54,7 @@ export default function NuevoRegistroPage({ params }: { params: Promise<{ id: st
       setFormData((prev) => ({ ...prev, cover_url: url }))
       notifications.success("Portada cargada", "Guarda el registro para aplicar cambios.")
     } catch (error) {
-      notifications.error("No se pudo subir la portada", "Verifica bucket y permisos de Storage.")
+      notifications.error("No se pudo subir la portada", "Verificá el directorio de almacenamiento y sus permisos.")
     } finally {
       setUploadingCover(false)
     }

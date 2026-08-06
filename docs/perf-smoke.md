@@ -5,9 +5,9 @@ Run these commands to compare response times before and after a deployment.
 ## 1) Public routes
 
 ```bash
-curl -s -o /dev/null -w "login ttfb=%{time_starttransfer}s total=%{time_total}s code=%{http_code}\n" "https://muga-library.vercel.app/iniciar-sesion"
-curl -s -o /dev/null -w "home ttfb=%{time_starttransfer}s total=%{time_total}s code=%{http_code}\n" "https://muga-library.vercel.app/"
-curl -s -o /dev/null -w "admin ttfb=%{time_starttransfer}s total=%{time_total}s code=%{http_code}\n" "https://muga-library.vercel.app/admin"
+curl -s -o /dev/null -w "login ttfb=%{time_starttransfer}s total=%{time_total}s code=%{http_code}\n" "https://bibliotecas.muga.dev/iniciar-sesion"
+curl -s -o /dev/null -w "home ttfb=%{time_starttransfer}s total=%{time_total}s code=%{http_code}\n" "https://bibliotecas.muga.dev/"
+curl -s -o /dev/null -w "admin ttfb=%{time_starttransfer}s total=%{time_total}s code=%{http_code}\n" "https://bibliotecas.muga.dev/admin"
 ```
 
 ## 2) Repeat for preview URL

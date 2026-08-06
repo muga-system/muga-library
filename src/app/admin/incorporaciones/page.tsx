@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation"
 
-export default function LegacyAdminIncorporacionesRoute() {
+export default function AdminIncorporacionesRedirectPage() {
   redirect("/admin")
 }

@@ -30,14 +30,8 @@ pnpm-debug.log*
 .DS_Store
 Thumbs.db
 
-# local binaries and archives
-supabase.exe
-supabase.tar.gz
-supabase.zip
-
 # misc temp
 coverage/
-.vercel
 backups/
 release/
 tsconfig.tsbuildinfo
