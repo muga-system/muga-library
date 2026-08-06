@@ -6,6 +6,7 @@ import { profiles, sessions } from "@/lib/db/schema"
 
 export const SESSION_COOKIE = "muga_session"
 export const REQUESTS_ADMIN_ROLE = "requests_admin"
+export const LIBRARIAN_ROLE = "librarian"
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30
 
 export type AuthUser = {
@@ -97,6 +98,11 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 
 export function isAdmin(user: AuthUser | null) {
   return user?.app_metadata.role === "admin" || user?.user_metadata.role === "admin"
+}
+
+export function isLibraryStaff(user: AuthUser | null) {
+  const role = user?.app_metadata.role || user?.user_metadata.role
+  return role === "admin" || role === LIBRARIAN_ROLE
 }
 
 export function isRequestsAdmin(user: AuthUser | null) {

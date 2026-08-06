@@ -1,10 +1,11 @@
 import Link from "next/link"
 import { ArrowLeft, Plus, Clock, AlertTriangle, BookOpen, User, CheckCircle, History } from "lucide-react"
 import { getAllLoans, getLoanStats } from "@/lib/services/database"
+import { requireStaffPage, staffOwnerId } from "@/lib/auth/page"
 
-async function getPrestamosStats() {
+async function getPrestamosStats(ownerId?: string) {
   try {
-    return await getLoanStats()
+    return await getLoanStats(ownerId)
   } catch {
     return { requested: 0, active: 0, overdue: 0, returned: 0 }
   }
@@ -39,18 +40,18 @@ function renderStatusBadge(prestamo: any) {
   return <span className="px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded">Devuelto</span>
 }
 
-async function getPrestamosRecientes() {
+async function getPrestamosRecientes(ownerId?: string) {
   try {
-    const loans = await getAllLoans()
+    const loans = await getAllLoans(undefined, ownerId)
     return loans.slice(0, 10)
   } catch {
     return []
   }
 }
 
-async function getPrestamosVencidos() {
+async function getPrestamosVencidos(ownerId?: string) {
   try {
-    const loans = await getAllLoans('active')
+    const loans = await getAllLoans('active', ownerId)
     const hoy = new Date().toISOString().split('T')[0]
     return loans.filter((l: any) => l.dueDate < hoy).slice(0, 5)
   } catch {
@@ -59,9 +60,11 @@ async function getPrestamosVencidos() {
 }
 
 export default async function PrestamosPage() {
-  const stats = await getPrestamosStats()
-  const recientes = await getPrestamosRecientes()
-  const vencidos = await getPrestamosVencidos()
+  const user = await requireStaffPage()
+  const ownerId = staffOwnerId(user)
+  const stats = await getPrestamosStats(ownerId)
+  const recientes = await getPrestamosRecientes(ownerId)
+  const vencidos = await getPrestamosVencidos(ownerId)
 
   return (
     <div className="min-h-screen bg-white">

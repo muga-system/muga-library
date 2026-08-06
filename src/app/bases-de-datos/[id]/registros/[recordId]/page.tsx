@@ -2,16 +2,18 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { ArrowLeft, FileText, User, Calendar, MapPin, Building2, Hash, Tag, BookOpen, Edit } from "lucide-react"
 import { getRecordById, getDatabaseById } from "@/lib/services/database"
+import { requireStaffPage, staffOwnerId } from "@/lib/auth/page"
 
-async function getRecord(databaseId: string, recordId: string) {
-  const record = await getRecordById(recordId)
-  const database = await getDatabaseById(databaseId)
+async function getRecord(databaseId: string, recordId: string, ownerId?: string) {
+  const record = await getRecordById(recordId, ownerId)
+  const database = await getDatabaseById(databaseId, ownerId)
   return record ? { ...record, database } : null
 }
 
 export default async function DetalleRegistroPage({ params }: { params: Promise<{ id: string; recordId: string }> }) {
   const { id: databaseId, recordId } = await params
-  const record = await getRecord(databaseId, recordId)
+  const user = await requireStaffPage()
+  const record = await getRecord(databaseId, recordId, staffOwnerId(user))
   
   if (!record) {
     notFound()

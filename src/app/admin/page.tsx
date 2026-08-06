@@ -16,6 +16,7 @@ import { AuthSignOutButton } from "@/components/auth-signout-button"
 import { MugaHeader } from "@/components/muga-header"
 import { getAllDatabases, getAllRecords, getLoanStats } from "@/lib/services/database"
 import { getCurrentUser, isRequestsAdmin } from "@/lib/auth/service"
+import { requireStaffPage, staffOwnerId } from "@/lib/auth/page"
 import { AdminIncorporacionesPanel } from "@/components/admin-incorporaciones-panel"
 
 function toSlug(name: string): string {
@@ -27,11 +28,11 @@ function toSlug(name: string): string {
     .replace(/[^a-z0-9-]/g, '')
 }
 
-async function getStats() {
+async function getStats(ownerId?: string) {
   const [databaseRows, recordRows, loanStats] = await Promise.all([
-    getAllDatabases(),
-    getAllRecords(),
-    getLoanStats().catch(() => ({ requested: 0, active: 0, overdue: 0, returned: 0 })),
+    getAllDatabases(ownerId),
+    getAllRecords(ownerId),
+    getLoanStats(ownerId).catch(() => ({ requested: 0, active: 0, overdue: 0, returned: 0 })),
   ])
 
   return {
@@ -43,16 +44,18 @@ async function getStats() {
   }
 }
 
-async function getDatabases() {
-  return getAllDatabases()
+async function getDatabases(ownerId?: string) {
+  return getAllDatabases(ownerId)
 }
 
 export default async function AdminPage() {
   const user = await getCurrentUser()
   if (isRequestsAdmin(user)) return <AdminIncorporacionesPanel initialAuthenticated={Boolean(user)} />
+  const staffUser = await requireStaffPage()
+  const ownerId = staffOwnerId(staffUser)
 
-  const stats = await getStats()
-  const databases = await getDatabases()
+  const stats = await getStats(ownerId)
+  const databases = await getDatabases(ownerId)
 
   return (
       <div className="min-h-screen bg-white dark:bg-slate-950">

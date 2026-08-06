@@ -13,6 +13,8 @@ export const profiles = sqliteTable("profiles", {
   id: id(),
   email: text("email").notNull(),
   passwordHash: text("password_hash").notNull(),
+  fullName: text("full_name"),
+  avatarUrl: text("avatar_url"),
   libraryName: text("library_name"),
   libraryDescription: text("library_description"),
   librarySlug: text("library_slug"),

@@ -1,10 +1,11 @@
-import { getAllLoans, createLoan, getLoanStats } from "@/lib/services/database"
-import { requireApiAdmin, requireApiUser } from "@/lib/api/auth"
+import { getAllLoans, createLoan, getLoanStats, getDatabaseById } from "@/lib/services/database"
+import { requireApiStaff, requireApiUser } from "@/lib/api/auth"
+import { isAdmin, isLibraryStaff } from "@/lib/auth/service"
 import { apiError, apiSuccess, parseJsonBody } from "@/lib/api/http"
 import { createLoanSchema, loansQuerySchema } from "@/lib/api/schemas"
 
 export async function GET(request: Request) {
-  const auth = await requireApiAdmin()
+  const auth = await requireApiStaff()
   if (!auth.ok) return auth.response
 
   const { searchParams } = new URL(request.url)
@@ -19,11 +20,11 @@ export async function GET(request: Request) {
 
   try {
     if (parsedQuery.data.stats === "true") {
-      const loanStats = await getLoanStats()
+      const loanStats = await getLoanStats(isAdmin(auth.user) ? undefined : auth.user.id)
       return apiSuccess(loanStats)
     }
 
-    const loans = await getAllLoans(parsedQuery.data.status)
+    const loans = await getAllLoans(parsedQuery.data.status, isAdmin(auth.user) ? undefined : auth.user.id)
     return apiSuccess(loans)
   } catch (error) {
     console.error("Error fetching loans:", error)
@@ -39,6 +40,11 @@ export async function POST(request: Request) {
   if (!parsed.success) return parsed.response
 
   try {
+    const staff = isLibraryStaff(auth.user)
+    const database = await getDatabaseById(parsed.data.database_id, staff && !isAdmin(auth.user) ? auth.user.id : undefined)
+    if (!database || (!staff && !database.isPublic)) {
+      return apiError(404, "DATABASE_NOT_FOUND", "El catálogo solicitado no existe")
+    }
     const loan = await createLoan({
       databaseId: parsed.data.database_id,
       recordId: parsed.data.record_id,
@@ -49,7 +55,7 @@ export async function POST(request: Request) {
       borrowerDepartment: parsed.data.borrower_department,
       notes: parsed.data.notes,
       createdBy: auth.user.id,
-      publicRequest: parsed.data.public_request,
+      publicRequest: staff ? parsed.data.public_request ?? false : true,
     })
     return apiSuccess(loan, 201)
   } catch (error) {

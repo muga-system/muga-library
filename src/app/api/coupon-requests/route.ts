@@ -4,27 +4,17 @@ import {
   sendCouponRequestAdminNotificationEmail,
   sendCouponRequestReceivedEmail,
 } from "@/lib/email"
+import { parseJsonBody } from "@/lib/api/http"
+import { couponRequestSchema } from "@/lib/api/schemas"
+import { rateLimit } from "@/lib/security/rate-limit"
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { email, libraryName, description } = body
-
-    if (!email || !libraryName) {
-      return NextResponse.json(
-        { success: false, error: "Email y nombre de biblioteca son requeridos" },
-        { status: 400 }
-      )
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { success: false, error: "Email inválido" },
-        { status: 400 }
-      )
-    }
+    const limited = rateLimit(request, "coupon-request", 5, 15 * 60 * 1000)
+    if (limited) return limited
+    const parsed = await parseJsonBody(request, couponRequestSchema, { maxBytes: 32 * 1024 })
+    if (!parsed.success) return parsed.response
+    const { email, libraryName, description } = parsed.data
 
     const requestData = await createCouponRequest({
       email,

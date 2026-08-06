@@ -1,10 +1,11 @@
 import { getRecordsByDatabase, createRecord, searchRecords, createRecordsBatch } from "@/lib/services/database"
-import { requireApiAdmin } from "@/lib/api/auth"
+import { requireApiStaff } from "@/lib/api/auth"
+import { isAdmin } from "@/lib/auth/service"
 import { apiError, apiSuccess, parseJsonBody } from "@/lib/api/http"
 import { createRecordSchema, recordsQuerySchema, batchCreateRecordsSchema } from "@/lib/api/schemas"
 
 export async function GET(request: Request) {
-  const auth = await requireApiAdmin()
+  const auth = await requireApiStaff()
   if (!auth.ok) return auth.response
 
   const { searchParams } = new URL(request.url)
@@ -20,10 +21,11 @@ export async function GET(request: Request) {
   }
 
   const { databaseId, q, limit, offset } = parsedQuery.data
+  const ownerId = isAdmin(auth.user) ? undefined : auth.user.id
 
   try {
     if (q) {
-      const results = await searchRecords(q, databaseId)
+      const results = await searchRecords(q, databaseId, { limit, offset }, ownerId)
       return apiSuccess(results)
     }
 
@@ -31,7 +33,7 @@ export async function GET(request: Request) {
       return apiError(400, "VALIDATION_ERROR", "databaseId is required when q is not provided")
     }
 
-    const result = await getRecordsByDatabase(databaseId, { limit, offset })
+    const result = await getRecordsByDatabase(databaseId, { limit, offset }, ownerId)
     return apiSuccess(result)
   } catch (error) {
     console.error("Error fetching records:", error)
@@ -40,7 +42,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const auth = await requireApiAdmin()
+  const auth = await requireApiStaff()
   if (!auth.ok) return auth.response
 
   const parsed = await parseJsonBody(request, createRecordSchema)
@@ -52,7 +54,7 @@ export async function POST(request: Request) {
       data: parsed.data.data,
       totalEjemplares: parsed.data.total_ejemplares,
       disponibles: parsed.data.disponibles,
-    })
+    }, isAdmin(auth.user) ? undefined : auth.user.id)
     return apiSuccess(record, 201)
   } catch (error) {
     console.error("Error creating record:", error)
@@ -61,14 +63,14 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
-  const auth = await requireApiAdmin()
+  const auth = await requireApiStaff()
   if (!auth.ok) return auth.response
 
   const parsed = await parseJsonBody(request, batchCreateRecordsSchema)
   if (!parsed.success) return parsed.response
 
   try {
-    const records = await createRecordsBatch(parsed.data.database_id, parsed.data.records)
+    const records = await createRecordsBatch(parsed.data.database_id, parsed.data.records, isAdmin(auth.user) ? undefined : auth.user.id)
     return apiSuccess({ created: records.length, records })
   } catch (error) {
     console.error("Error creating batch records:", error)

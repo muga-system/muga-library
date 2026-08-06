@@ -1,10 +1,11 @@
 import { getLoanById, returnLoan } from "@/lib/services/database"
-import { requireApiAdmin } from "@/lib/api/auth"
+import { requireApiStaff } from "@/lib/api/auth"
+import { isAdmin } from "@/lib/auth/service"
 import { apiError, apiSuccess, parseJsonBody } from "@/lib/api/http"
 import { idParamSchema, updateLoanSchema } from "@/lib/api/schemas"
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const auth = await requireApiAdmin()
+  const auth = await requireApiStaff()
   if (!auth.ok) return auth.response
 
   const parsedParams = idParamSchema.safeParse(await params)
@@ -13,7 +14,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   }
 
   try {
-    const loan = await getLoanById(parsedParams.data.id)
+    const loan = await getLoanById(parsedParams.data.id, isAdmin(auth.user) ? undefined : auth.user.id)
     if (!loan) {
       return apiError(404, "LOAN_NOT_FOUND", "Loan not found")
     }
@@ -25,7 +26,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
 }
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const auth = await requireApiAdmin()
+  const auth = await requireApiStaff()
   if (!auth.ok) return auth.response
 
   const parsedParams = idParamSchema.safeParse(await params)
@@ -41,7 +42,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       return apiError(400, "VALIDATION_ERROR", "Invalid action")
     }
 
-    const existing = await getLoanById(parsedParams.data.id)
+    const existing = await getLoanById(parsedParams.data.id, isAdmin(auth.user) ? undefined : auth.user.id)
     if (!existing) {
       return apiError(404, "LOAN_NOT_FOUND", "Loan not found")
     }

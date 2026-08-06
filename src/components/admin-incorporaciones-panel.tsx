@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { Building2, Check, Clock, Copy, Home, Mail, RefreshCcw, X } from "lucide-react"
+import { AlertTriangle, Building2, Check, Clock, Copy, Home, Mail, RefreshCcw, X } from "lucide-react"
 import { MugaHeader } from "@/components/muga-header"
 import { AuthSignOutButton } from "@/components/auth-signout-button"
 import { useNotifications } from "@/components/notifications-provider"
@@ -24,7 +24,9 @@ type ApprovedCoupon = {
 }
 
 function formatDate(value: string) {
-  return new Date(value).toLocaleDateString("es-AR", {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return "Fecha no disponible"
+  return date.toLocaleDateString("es-AR", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -37,6 +39,9 @@ export function AdminIncorporacionesPanel({ initialAuthenticated = false }: { in
   const [loading, setLoading] = useState(true)
   const [processingId, setProcessingId] = useState<string | null>(null)
   const [approvedCoupon, setApprovedCoupon] = useState<ApprovedCoupon | null>(null)
+  const [approvalRequest, setApprovalRequest] = useState<CouponRequest | null>(null)
+  const [rejectionRequest, setRejectionRequest] = useState<CouponRequest | null>(null)
+  const [rejectionReason, setRejectionReason] = useState("")
 
   async function loadRequests() {
     setLoading(true)
@@ -56,13 +61,7 @@ export function AdminIncorporacionesPanel({ initialAuthenticated = false }: { in
     loadRequests()
   }, [])
 
-  async function processRequest(request: CouponRequest, action: "approve" | "reject") {
-    if (action === "approve" && !window.confirm(`¿Aprobar la incorporación de ${request.libraryName}?`)) return
-
-    const adminNotes = action === "reject"
-      ? window.prompt("Motivo del rechazo (opcional)")?.trim() || undefined
-      : undefined
-
+  async function processRequest(request: CouponRequest, action: "approve" | "reject", adminNotes?: string): Promise<boolean> {
     setProcessingId(request.id)
     try {
       const response = await fetch("/api/admin/coupon-requests", {
@@ -89,12 +88,33 @@ export function AdminIncorporacionesPanel({ initialAuthenticated = false }: { in
           notifications.warning("Solicitud aprobada", "El cupón se generó, pero el email no pudo enviarse.")
         }
       } else {
-        notifications.success("Solicitud rechazada")
+        if (body.emailSent !== false) {
+          notifications.success("Solicitud rechazada", "Se envió el motivo al email de contacto.")
+        } else {
+          notifications.warning("Solicitud rechazada", "Se rechazó la solicitud, pero no se pudo enviar el email.")
+        }
       }
+      return true
     } catch (error) {
       notifications.error("No se pudo procesar", (error as Error).message)
+      return false
     } finally {
       setProcessingId(null)
+    }
+  }
+
+  async function confirmApproval() {
+    if (!approvalRequest) return
+    const approved = await processRequest(approvalRequest, "approve")
+    if (approved) setApprovalRequest(null)
+  }
+
+  async function confirmRejection() {
+    if (!rejectionRequest || !rejectionReason.trim()) return
+    const rejected = await processRequest(rejectionRequest, "reject", rejectionReason.trim())
+    if (rejected !== false) {
+      setRejectionRequest(null)
+      setRejectionReason("")
     }
   }
 
@@ -197,11 +217,11 @@ export function AdminIncorporacionesPanel({ initialAuthenticated = false }: { in
                         <td className="whitespace-nowrap px-5 py-4 text-sm text-slate-500">{formatDate(request.requestedAt)}</td>
                         <td className="px-5 py-4">
                           <div className="flex justify-end gap-2">
-                            <button type="button" onClick={() => processRequest(request, "approve")} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-medium text-white hover:bg-emerald-500 disabled:opacity-50">
+                            <button type="button" onClick={() => setApprovalRequest(request)} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-medium text-white hover:bg-emerald-500 disabled:opacity-50">
                               <Check className="h-3.5 w-3.5" />
                               Aprobar
                             </button>
-                            <button type="button" onClick={() => processRequest(request, "reject")} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700 hover:bg-rose-100 disabled:opacity-50 dark:border-rose-900/60 dark:bg-rose-950/20 dark:text-rose-300">
+                            <button type="button" onClick={() => { setRejectionRequest(request); setRejectionReason("") }} disabled={busy} className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700 hover:bg-rose-100 disabled:opacity-50 dark:border-rose-900/60 dark:bg-rose-950/20 dark:text-rose-300">
                               <X className="h-3.5 w-3.5" />
                               Rechazar
                             </button>
@@ -215,6 +235,110 @@ export function AdminIncorporacionesPanel({ initialAuthenticated = false }: { in
             </div>
           </div>
         )}
+
+        {approvalRequest ? (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 px-4 py-6 backdrop-blur-sm" role="presentation">
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="approve-request-title"
+              className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900"
+            >
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-950/50">
+                  <Check className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
+                </div>
+                <div>
+                  <h2 id="approve-request-title" className="text-lg font-semibold text-slate-900 dark:text-slate-100">Aprobar incorporación</h2>
+                  <p className="mt-1 text-sm text-slate-500">Se generará un cupón y se enviará al email de {approvalRequest.libraryName}.</p>
+                </div>
+              </div>
+
+              <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm dark:border-slate-700 dark:bg-slate-950">
+                <p className="font-medium text-slate-800 dark:text-slate-200">{approvalRequest.libraryName}</p>
+                <p className="mt-1 text-slate-500">{approvalRequest.email}</p>
+              </div>
+
+              <div className="mt-6 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setApprovalRequest(null)}
+                  className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmApproval}
+                  disabled={processingId === approvalRequest.id}
+                  className="rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {processingId === approvalRequest.id ? "Aprobando..." : "Confirmar aprobación"}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {rejectionRequest ? (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 px-4 py-6 backdrop-blur-sm" role="presentation">
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="reject-request-title"
+              className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-rose-100 dark:bg-rose-950/50">
+                    <AlertTriangle className="h-5 w-5 text-rose-600 dark:text-rose-300" />
+                  </div>
+                  <div>
+                    <h2 id="reject-request-title" className="text-lg font-semibold text-slate-900 dark:text-slate-100">Rechazar incorporación</h2>
+                    <p className="mt-1 text-sm text-slate-500">Explicá el motivo para informárselo a {rejectionRequest.libraryName}.</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { setRejectionRequest(null); setRejectionReason("") }}
+                  className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                  aria-label="Cerrar ventana"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <label htmlFor="rejection-reason" className="mt-6 block text-sm font-medium text-slate-700 dark:text-slate-300">Motivo del rechazo</label>
+              <textarea
+                id="rejection-reason"
+                autoFocus
+                value={rejectionReason}
+                onChange={(event) => setRejectionReason(event.target.value)}
+                placeholder="Por ejemplo: necesitamos más información sobre la biblioteca..."
+                rows={5}
+                className="mt-2 w-full resize-none rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-900/10 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+              />
+
+              <div className="mt-6 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => { setRejectionRequest(null); setRejectionReason("") }}
+                  className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmRejection}
+                  disabled={!rejectionReason.trim() || processingId === rejectionRequest.id}
+                  className="rounded-lg bg-rose-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {processingId === rejectionRequest.id ? "Rechazando..." : "Confirmar rechazo"}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         <div className="mt-8 flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
           <Mail className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />

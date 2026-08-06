@@ -21,7 +21,7 @@ function loanRow(row: typeof loans.$inferSelect, record?: ReturnType<typeof reco
   return { ...row, database_id: row.databaseId, record_id: row.recordId, rejection_reason: row.rejectionReason, approved_by: row.approvedBy, approved_at: row.approvedAt, created_at: row.createdAt, updated_at: row.updatedAt, databaseId: row.databaseId, recordId: row.recordId, borrowerType: row.borrowerType, borrowerName: row.borrowerName, borrowerCourse: row.borrowerCourse, borrowerDivision: row.borrowerDivision, borrowerDepartment: row.borrowerDepartment, loanDate: row.loanDate, dueDate: row.dueDate, returnDate: row.returnDate, rejectionReason: row.rejectionReason, approvedBy: row.approvedBy, approvedAt: row.approvedAt, createdAt: row.createdAt, updatedAt: row.updatedAt, record: record || null, records: record || null }
 }
 
-export async function getAllDatabases() {
+export async function getAllDatabases(ownerId?: string) {
   const rows = db.select({
     id: databases.id,
     name: databases.name,
@@ -33,14 +33,19 @@ export async function getAllDatabases() {
     createdAt: databases.createdAt,
     updatedAt: databases.updatedAt,
     recordsCount: sql<number>`count(${records.id})`,
-  }).from(databases).leftJoin(records, eq(records.databaseId, databases.id)).groupBy(databases.id).orderBy(desc(databases.createdAt)).all()
+  }).from(databases).leftJoin(records, eq(records.databaseId, databases.id)).where(ownerId ? eq(databases.ownerId, ownerId) : undefined).groupBy(databases.id).orderBy(desc(databases.createdAt)).all()
 
   return rows.map(({ recordsCount, ...row }) => databaseRow(row, Number(recordsCount) || 0))
 }
-export async function getAllRecords() { return db.select().from(records).orderBy(desc(records.createdAt)).all().map(recordRow) }
-export async function getDatabaseById(id: string) { const row = db.select().from(databases).where(eq(databases.id, id)).get(); return row ? databaseRow(row) : null }
-export async function getDatabaseByName(name: string) { const row = db.select().from(databases).where(eq(databases.name, name)).get(); return row ? databaseRow(row) : null }
-export async function getDatabaseBySlug(slug: string) { const row = db.select().from(databases).all().find((item) => slugify(item.name) === slug); return row ? databaseRow(row) : null }
+export async function getAllRecords(ownerId?: string) {
+  const ownedDatabaseIds = ownerId
+    ? new Set(db.select({ id: databases.id }).from(databases).where(eq(databases.ownerId, ownerId)).all().map((row) => row.id))
+    : null
+  return db.select().from(records).orderBy(desc(records.createdAt)).all().filter((row) => !ownedDatabaseIds || ownedDatabaseIds.has(row.databaseId)).map(recordRow)
+}
+export async function getDatabaseById(id: string, ownerId?: string) { const row = db.select().from(databases).where(and(eq(databases.id, id), ownerId ? eq(databases.ownerId, ownerId) : undefined)).get(); return row ? databaseRow(row) : null }
+export async function getDatabaseByName(name: string, ownerId?: string) { const row = db.select().from(databases).where(and(eq(databases.name, name), ownerId ? eq(databases.ownerId, ownerId) : undefined)).get(); return row ? databaseRow(row) : null }
+export async function getDatabaseBySlug(slug: string, ownerId?: string) { const row = db.select().from(databases).where(ownerId ? eq(databases.ownerId, ownerId) : undefined).all().find((item) => slugify(item.name) === slug); return row ? databaseRow(row) : null }
 
 export async function createDatabase(data: { name: string; description?: string; ownerId?: string }) {
   const timestamp = now()
@@ -48,71 +53,86 @@ export async function createDatabase(data: { name: string; description?: string;
   return databaseRow(row)
 }
 
-export async function updateDatabase(id: string, data: { name?: string; description?: string }) {
-  const [row] = db.update(databases).set({ ...data, updatedAt: new Date().toISOString() }).where(eq(databases.id, id)).returning().all()
-  return databaseRow(row)
+export async function updateDatabase(id: string, data: { name?: string; description?: string }, ownerId?: string) {
+  const [row] = db.update(databases).set({ ...data, updatedAt: new Date().toISOString() }).where(and(eq(databases.id, id), ownerId ? eq(databases.ownerId, ownerId) : undefined)).returning().all()
+  return row ? databaseRow(row) : null
 }
 
-export async function deleteDatabase(id: string) { db.delete(databases).where(eq(databases.id, id)).run() }
+export async function deleteDatabase(id: string, ownerId?: string) { db.delete(databases).where(and(eq(databases.id, id), ownerId ? eq(databases.ownerId, ownerId) : undefined)).run() }
 
-export async function getRecordsByDatabase(databaseId: string, options?: { limit?: number; offset?: number }) {
+export async function getRecordsByDatabase(databaseId: string, options?: { limit?: number; offset?: number }, ownerId?: string) {
   const limit = options?.limit ?? 50
   const offset = options?.offset ?? 0
+  const database = db.select({ id: databases.id }).from(databases).where(and(eq(databases.id, databaseId), ownerId ? eq(databases.ownerId, ownerId) : undefined)).get()
+  if (!database) return { records: [], total: 0 }
   const rows = db.select().from(records).where(eq(records.databaseId, databaseId)).orderBy(desc(records.createdAt)).limit(limit).offset(offset).all()
   const total = db.select({ count: sql<number>`count(*)` }).from(records).where(eq(records.databaseId, databaseId)).get()?.count || 0
   return { records: rows.map(recordRow), total }
 }
 
-export async function getRecordById(id: string) { const row = db.select().from(records).where(eq(records.id, id)).get(); return row ? recordRow(row) : null }
+export async function getRecordById(id: string, ownerId?: string) { const row = db.select({ record: records }).from(records).innerJoin(databases, eq(records.databaseId, databases.id)).where(and(eq(records.id, id), ownerId ? eq(databases.ownerId, ownerId) : undefined)).get(); return row ? recordRow(row.record) : null }
 
-export async function createRecord(data: { database_id?: string; databaseId?: string; data: RecordData; total_ejemplares?: number; totalEjemplares?: number; disponibles?: number }) {
+export async function createRecord(data: { database_id?: string; databaseId?: string; data: RecordData; total_ejemplares?: number; totalEjemplares?: number; disponibles?: number }, ownerId?: string) {
   const timestamp = now()
-  const [row] = db.insert(records).values({ databaseId: data.database_id ?? data.databaseId!, data: data.data, totalEjemplares: data.total_ejemplares ?? data.totalEjemplares ?? 1, disponibles: data.disponibles ?? 1, createdAt: timestamp, updatedAt: timestamp }).returning().all()
+  const databaseId = data.database_id ?? data.databaseId!
+  if (ownerId && !db.select({ id: databases.id }).from(databases).where(and(eq(databases.id, databaseId), eq(databases.ownerId, ownerId))).get()) throw new Error("DATABASE_NOT_FOUND")
+  const [row] = db.insert(records).values({ databaseId, data: data.data, totalEjemplares: data.total_ejemplares ?? data.totalEjemplares ?? 1, disponibles: data.disponibles ?? 1, createdAt: timestamp, updatedAt: timestamp }).returning().all()
   return recordRow(row)
 }
 
-export async function createRecordsBatch(databaseId: string, values: Array<{ data: RecordData; total_ejemplares?: number; disponibles?: number }>) {
+export async function createRecordsBatch(databaseId: string, values: Array<{ data: RecordData; total_ejemplares?: number; disponibles?: number }>, ownerId?: string) {
   if (!values.length) return []
+  if (ownerId && !db.select({ id: databases.id }).from(databases).where(and(eq(databases.id, databaseId), eq(databases.ownerId, ownerId))).get()) throw new Error("DATABASE_NOT_FOUND")
   const timestamp = now()
   const rows = db.insert(records).values(values.map((item) => ({ databaseId, data: item.data, totalEjemplares: item.total_ejemplares ?? 1, disponibles: item.disponibles ?? 1, createdAt: timestamp, updatedAt: timestamp }))).returning().all()
   return rows.map(recordRow)
 }
 
-export async function updateRecord(id: string, data: { data?: RecordData; total_ejemplares?: number; totalEjemplares?: number; disponibles?: number }) {
+export async function updateRecord(id: string, data: { data?: RecordData; total_ejemplares?: number; totalEjemplares?: number; disponibles?: number }, ownerId?: string) {
+  const existing = db.select({ id: records.id }).from(records).innerJoin(databases, eq(records.databaseId, databases.id)).where(and(eq(records.id, id), ownerId ? eq(databases.ownerId, ownerId) : undefined)).get()
+  if (!existing) return null
   const [row] = db.update(records).set({ data: data.data, totalEjemplares: data.total_ejemplares ?? data.totalEjemplares, disponibles: data.disponibles, updatedAt: new Date().toISOString() }).where(eq(records.id, id)).returning().all()
-  return recordRow(row)
+  return row ? recordRow(row) : null
 }
 
-export async function deleteRecord(id: string) { db.delete(records).where(eq(records.id, id)).run() }
+export async function deleteRecord(id: string, ownerId?: string) {
+  const existing = db.select({ id: records.id }).from(records).innerJoin(databases, eq(records.databaseId, databases.id)).where(and(eq(records.id, id), ownerId ? eq(databases.ownerId, ownerId) : undefined)).get()
+  if (!existing) return false
+  db.delete(records).where(eq(records.id, id)).run()
+  return true
+}
 
-function matchingRecordRows(query: string, databaseId?: string) {
+function matchingRecordRows(query: string, databaseId?: string, ownerId?: string) {
   const term = query.trim().toLowerCase()
-  const rows = db.select().from(records).where(databaseId ? eq(records.databaseId, databaseId) : undefined).orderBy(desc(records.createdAt)).all()
+  const ownedDatabaseIds = ownerId ? new Set(db.select({ id: databases.id }).from(databases).where(eq(databases.ownerId, ownerId)).all().map((row) => row.id)) : null
+  const rows = db.select().from(records).where(databaseId ? eq(records.databaseId, databaseId) : undefined).orderBy(desc(records.createdAt)).all().filter((row) => !ownedDatabaseIds || ownedDatabaseIds.has(row.databaseId))
   return term ? rows.filter((row) => JSON.stringify(row.data).toLowerCase().includes(term)) : rows
 }
 
-export async function searchRecords(query: string, databaseId?: string, options?: { limit?: number; offset?: number }) {
+export async function searchRecords(query: string, databaseId?: string, options?: { limit?: number; offset?: number }, ownerId?: string) {
   const limit = options?.limit ?? 100
   const offset = options?.offset ?? 0
-  return matchingRecordRows(query, databaseId).slice(offset, offset + limit).map(recordRow)
+  return matchingRecordRows(query, databaseId, ownerId).slice(offset, offset + limit).map(recordRow)
 }
 
-export async function countSearchRecords(query: string, databaseId?: string) {
-  return matchingRecordRows(query, databaseId).length
+export async function countSearchRecords(query: string, databaseId?: string, ownerId?: string) {
+  return matchingRecordRows(query, databaseId, ownerId).length
 }
 
-export async function getAllLoans(status?: string) {
-  const rows = db.select().from(loans).where(status ? eq(loans.status, status) : undefined).orderBy(desc(loans.createdAt)).all()
+export async function getAllLoans(status?: string, ownerId?: string) {
+  const ownedDatabaseIds = ownerId ? new Set(db.select({ id: databases.id }).from(databases).where(eq(databases.ownerId, ownerId)).all().map((row) => row.id)) : null
+  const rows = db.select().from(loans).where(status ? eq(loans.status, status) : undefined).orderBy(desc(loans.createdAt)).all().filter((row) => !ownedDatabaseIds || ownedDatabaseIds.has(row.databaseId))
   const recordIds = [...new Set(rows.map((row) => row.recordId))]
   const recordRows = recordIds.length ? db.select().from(records).where(inArray(records.id, recordIds)).all() : []
   const byId = new Map(recordRows.map((row) => [row.id, recordRow(row)]))
   return rows.map((row) => loanRow(row, byId.get(row.recordId)))
 }
 
-export async function getLoanById(id: string) {
+export async function getLoanById(id: string, ownerId?: string) {
   const row = db.select().from(loans).where(eq(loans.id, id)).get()
   if (!row) return null
-  const record = await getRecordById(row.recordId)
+  if (ownerId && !db.select({ id: databases.id }).from(databases).where(and(eq(databases.id, row.databaseId), eq(databases.ownerId, ownerId))).get()) return null
+  const record = await getRecordById(row.recordId, ownerId)
   return loanRow(row, record)
 }
 
@@ -150,11 +170,17 @@ export async function approveLoan(id: string, approvedBy: string) {
   return loanRow(row)
 }
 
-export async function rejectLoan(id: string, reason?: string) { const [row] = db.update(loans).set({ status: "rejected", rejectionReason: reason || null, updatedAt: new Date().toISOString() }).where(eq(loans.id, id)).returning().all(); return row ? loanRow(row) : null }
+export async function rejectLoan(id: string, reason?: string) {
+  const current = db.select().from(loans).where(eq(loans.id, id)).get()
+  if (!current) return null
+  if (current.status !== "requested") throw new Error("INVALID_LOAN_STATE")
+  const [row] = db.update(loans).set({ status: "rejected", rejectionReason: reason || null, updatedAt: new Date().toISOString() }).where(and(eq(loans.id, id), eq(loans.status, "requested"))).returning().all()
+  return row ? loanRow(row) : null
+}
 export async function returnLoan(id: string) { const loan = db.select().from(loans).where(eq(loans.id, id)).get(); if (!loan) return null; const [row] = db.update(loans).set({ status: "returned", returnDate: new Date().toISOString().slice(0, 10), updatedAt: new Date().toISOString() }).where(eq(loans.id, id)).returning().all(); if (["active", "overdue"].includes(loan.status)) db.update(records).set({ disponibles: sql`${records.disponibles} + 1` }).where(eq(records.id, loan.recordId)).run(); return loanRow(row) }
 
-export async function getLoanStats() {
-  const rows = db.select().from(loans).all(); const today = new Date().toISOString().slice(0, 10)
+export async function getLoanStats(ownerId?: string) {
+  const rows = db.select().from(loans).all().filter((row) => !ownerId || Boolean(db.select({ id: databases.id }).from(databases).where(and(eq(databases.id, row.databaseId), eq(databases.ownerId, ownerId))).get())); const today = new Date().toISOString().slice(0, 10)
   return { requested: rows.filter((row) => row.status === "requested").length, active: rows.filter((row) => row.status === "active").length, overdue: rows.filter((row) => row.status === "overdue" || (row.status === "active" && row.dueDate < today)).length, returned: rows.filter((row) => row.status === "returned").length }
 }
 export async function getLoanConfig() { return db.select().from(loanConfig).all() }

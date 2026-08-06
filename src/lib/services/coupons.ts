@@ -1,7 +1,8 @@
 import { and, desc, eq, sql } from "drizzle-orm"
+import { randomInt } from "node:crypto"
 import { db } from "@/lib/db"
 import { coupons, couponRequests, databases, profiles } from "@/lib/db/schema"
-import { sendCouponApprovedEmail } from "@/lib/email"
+import { sendCouponApprovedEmail, sendCouponRejectedEmail } from "@/lib/email"
 
 export type Coupon = typeof coupons.$inferSelect
 export type Profile = typeof profiles.$inferSelect
@@ -33,7 +34,11 @@ export async function createProfile(data: { userId: string; email: string; libra
 }
 
 export async function markCouponUsed(couponId: string, userId: string) {
-  db.update(coupons).set({ usedAt: new Date().toISOString(), userId, usesCount: sql`${coupons.usesCount} + 1` }).where(eq(coupons.id, couponId)).run()
+  const result = db.update(coupons)
+    .set({ usedAt: new Date().toISOString(), userId, usesCount: sql`${coupons.usesCount} + 1` })
+    .where(and(eq(coupons.id, couponId), eq(coupons.isActive, true), sql`${coupons.usesCount} < ${coupons.maxUses}`))
+    .run()
+  if (!result.changes) throw new Error("COUPON_ALREADY_USED")
 }
 
 export async function createDatabaseOwner(ownerId: string, data: { name: string; description?: string }) {
@@ -41,8 +46,8 @@ export async function createDatabaseOwner(ownerId: string, data: { name: string;
     name: data.name,
     description: data.description || null,
     ownerId,
-    isPublic: true,
-    libraryVisibility: "public",
+    isPublic: false,
+    libraryVisibility: "private",
   }).returning({ id: databases.id }).all()
   return database
 }
@@ -72,7 +77,12 @@ export async function getPublicDatabases() {
 }
 
 export async function createCouponRequest(data: { email: string; libraryName: string; description?: string }) {
-  const [request] = db.insert(couponRequests).values({ email: data.email.toLowerCase(), libraryName: data.libraryName, description: data.description || null }).returning().all()
+  const [request] = db.insert(couponRequests).values({
+    email: data.email.toLowerCase(),
+    libraryName: data.libraryName,
+    description: data.description || null,
+    requestedAt: new Date().toISOString(),
+  }).returning().all()
   return request
 }
 
@@ -89,21 +99,25 @@ export type ProcessCouponRequestResult = {
 export async function processCouponRequest(requestId: string, action: "approve" | "reject", adminId: string, adminNotes?: string): Promise<ProcessCouponRequestResult> {
   const request = db.select().from(couponRequests).where(eq(couponRequests.id, requestId)).get()
   if (!request) throw new Error("Solicitud no encontrada")
+  if (request.status !== "pending") throw new Error("REQUEST_ALREADY_PROCESSED")
   const processedAt = new Date().toISOString()
   if (action === "reject") {
-    db.update(couponRequests).set({ status: "rejected", processedBy: adminId, processedAt, adminNotes: adminNotes || null }).where(eq(couponRequests.id, requestId)).run()
-    return { coupon: null, emailSent: true }
+    const result = db.update(couponRequests).set({ status: "rejected", processedBy: adminId, processedAt, adminNotes: adminNotes || null }).where(and(eq(couponRequests.id, requestId), eq(couponRequests.status, "pending"))).run()
+    if (!result.changes) throw new Error("REQUEST_ALREADY_PROCESSED")
+    const emailSent = await sendCouponRejectedEmail(request.email, request.libraryName, adminNotes || "No se indicó un motivo específico.")
+    return { coupon: null, emailSent }
   }
   const couponCode = generateCouponCode()
   const [coupon] = db.insert(coupons).values({ code: couponCode, createdBy: adminId, expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() }).returning().all()
-  db.update(couponRequests).set({ status: "approved", processedBy: adminId, processedAt, adminNotes: `Cupón generado: ${couponCode}. ${adminNotes || ""}` }).where(eq(couponRequests.id, requestId)).run()
+  const result = db.update(couponRequests).set({ status: "approved", processedBy: adminId, processedAt, adminNotes: `Cupón generado: ${couponCode}. ${adminNotes || ""}` }).where(and(eq(couponRequests.id, requestId), eq(couponRequests.status, "pending"))).run()
+  if (!result.changes) throw new Error("REQUEST_ALREADY_PROCESSED")
   const emailSent = await sendCouponApprovedEmail(request.email, request.libraryName, couponCode)
   return { coupon, emailSent }
 }
 
 function generateCouponCode() {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-  return Array.from({ length: 16 }, (_, index) => index > 0 && index % 4 === 0 ? `-${chars[Math.floor(Math.random() * chars.length)]}` : chars[Math.floor(Math.random() * chars.length)]).join("")
+  return Array.from({ length: 16 }, (_, index) => index > 0 && index % 4 === 0 ? `-${chars[randomInt(chars.length)]}` : chars[randomInt(chars.length)]).join("")
 }
 
 export async function getAdminProfiles() { return db.select().from(profiles).where(eq(profiles.role, "admin")).all() }

@@ -7,7 +7,7 @@ import * as schema from "./schema"
 function getDatabasePath() {
   const configured = process.env.DATABASE_URL || "file:./data/muga-library.db"
   const path = configured.startsWith("file:") ? configured.slice(5) : configured
-  return resolve(process.cwd(), path)
+  return resolve(/* turbopackIgnore: true */ process.cwd(), path)
 }
 
 const databasePath = getDatabasePath()

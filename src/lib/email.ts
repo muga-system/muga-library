@@ -6,7 +6,7 @@ const HOSTINGER_SMTP_SECURE = (process.env.HOSTINGER_SMTP_SECURE || "true").toLo
 const HOSTINGER_SMTP_USER = process.env.HOSTINGER_SMTP_USER?.trim()
 const HOSTINGER_SMTP_PASSWORD = process.env.HOSTINGER_SMTP_PASSWORD?.trim()
 const HOSTINGER_MAIL_DISPLAY_NAME = process.env.HOSTINGER_MAIL_DISPLAY_NAME?.trim() || "MUGA"
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://muga-library.vercel.app"
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://bibliotecas.muga.dev"
 
 console.log("📧 [INIT] Hostinger SMTP user configured:", !!HOSTINGER_SMTP_USER)
 console.log("📧 [INIT] Hostinger SMTP password exists:", !!HOSTINGER_SMTP_PASSWORD)
@@ -85,6 +85,10 @@ export async function sendCredentialsEmail(
   libraryName: string
 ): Promise<boolean> {
   const subject = `Tus credenciales de acceso - ${libraryName} | MUGA`
+  const safeLibraryName = escapeHtml(libraryName)
+  const safeUsername = escapeHtml(username)
+  const safePassword = escapeHtml(password)
+  const safeAppUrl = escapeHtml(APP_URL.replace(/\/$/, ""))
 
   const html = `
 <!DOCTYPE html>
@@ -117,7 +121,7 @@ export async function sendCredentialsEmail(
         </h2>
 
         <p style="margin: 0 0 32px; color: #475569; font-size: 16px; line-height: 1.6;">
-          Tu biblioteca <strong>${libraryName}</strong> ha sido activada exitosamente.
+          Tu biblioteca <strong>${safeLibraryName}</strong> ha sido activada exitosamente.
         </p>
 
         <!-- Credentials Box -->
@@ -128,17 +132,17 @@ export async function sendCredentialsEmail(
           
           <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
             <span style="color: #64748b; font-size: 14px;">Usuario:</span>
-            <span style="color: #1e293b; font-size: 14px; font-weight: 600; font-family: monospace;">${username}</span>
+            <span style="color: #1e293b; font-size: 14px; font-weight: 600; font-family: monospace;">${safeUsername}</span>
           </div>
           
           <div style="display: flex; justify-content: space-between;">
             <span style="color: #64748b; font-size: 14px;">Contraseña:</span>
-            <span style="color: #1e293b; font-size: 14px; font-weight: 600; font-family: monospace;">${password}</span>
+            <span style="color: #1e293b; font-size: 14px; font-weight: 600; font-family: monospace;">${safePassword}</span>
           </div>
         </div>
 
         <!-- Button -->
-        <a href="${APP_URL}/iniciar-sesion" style="display: inline-block; background: #0d9488; color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+        <a href="${safeAppUrl}/iniciar-sesion" style="display: inline-block; background: #0d9488; color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
           Iniciar Sesión
         </a>
 
@@ -227,6 +231,64 @@ export async function sendCouponApprovedEmail(
       <p style="margin: 0;">
         © ${new Date().getFullYear()} MUGA - Sistema de Gestión Bibliotecaria
       </p>
+    </div>
+  </div>
+</body>
+</html>
+  `
+
+  return sendEmail({ to: email, subject, html })
+}
+
+export async function sendCouponRejectedEmail(
+  email: string,
+  libraryName: string,
+  reason: string
+): Promise<boolean> {
+  const subject = `Respuesta a tu solicitud de incorporación - ${libraryName} | MUGA`
+  const safeLibraryName = escapeHtml(libraryName)
+  const safeReason = escapeHtml(reason.trim() || "No se indicó un motivo específico.")
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f8fafc;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+    <div style="background: white; border-radius: 16px; padding: 40px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+      <div style="text-align: center; margin-bottom: 32px;">
+        <h1 style="margin: 0; font-size: 32px; color: #0f172a; letter-spacing: -1px;">
+          <span style="color: #0d9488;">MUGA</span>
+        </h1>
+        <p style="margin: 8px 0 0; color: #64748b; font-size: 14px;">Sistema de Gestión Bibliotecaria</p>
+      </div>
+
+      <div style="text-align: center;">
+        <div style="width: 64px; height: 64px; background: #fff1f2; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 24px;">
+          <span style="font-size: 32px;">ℹ️</span>
+        </div>
+
+        <h2 style="margin: 0 0 16px; font-size: 24px; color: #1e293b; font-weight: 600;">Solicitud no aprobada</h2>
+        <p style="margin: 0 0 24px; color: #475569; font-size: 16px; line-height: 1.6;">
+          Revisamos la solicitud de incorporación de <strong>${safeLibraryName}</strong> y en esta oportunidad no podemos aprobarla.
+        </p>
+
+        <div style="background: #fff1f2; border: 1px solid #fecdd3; border-radius: 12px; padding: 24px; text-align: left;">
+          <p style="margin: 0 0 8px; color: #9f1239; font-size: 14px; font-weight: 600;">Motivo de la respuesta</p>
+          <p style="margin: 0; color: #4c0519; font-size: 15px; line-height: 1.6; white-space: pre-line;">${safeReason}</p>
+        </div>
+
+        <p style="margin: 24px 0 0; color: #64748b; font-size: 13px; line-height: 1.5;">
+          Si contás con información adicional, podés volver a solicitar la incorporación desde MUGA.
+        </p>
+      </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 32px; color: #94a3b8; font-size: 12px;">
+      <p style="margin: 0;">© ${new Date().getFullYear()} MUGA - Sistema de Gestión Bibliotecaria</p>
     </div>
   </div>
 </body>

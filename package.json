@@ -16,6 +16,8 @@
     "test:coverage": "vitest run --coverage",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/migrate-db.ts",
+    "db:backup": "node scripts/backup-data.mjs",
+    "db:restore": "node scripts/restore-data.mjs",
     "db:convert-aguapey": "node scripts/convert-aguapey-iso.mjs",
     "db:convert-aguapey-mst": "node scripts/convert-aguapey-mst.mjs",
     "db:import-aguapey": "node scripts/import-aguapey-full.mjs",
@@ -28,7 +30,10 @@
     "bibliotecario",
     "educacion"
   ],
-  "author": "",
+  "author": "MUGA",
+  "engines": {
+    "node": ">=22.0.0 <25"
+  },
   "license": "ISC",
   "type": "module",
   "dependencies": {
@@ -44,22 +49,22 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dotenv": "^17.3.1",
-    "drizzle-orm": "^0.45.1",
+    "drizzle-orm": "^0.45.2",
+    "fflate": "0.8.2",
     "jose": "^6.2.3",
     "lucide-react": "^1.0.1",
-    "next": "^16.2.1",
+    "next": "^16.3.0",
     "next-themes": "^0.4.6",
     "nodemailer": "^9.0.3",
     "papaparse": "^5.5.3",
-    "postcss": "^8.5.8",
+    "postcss": "^8.5.26",
     "postgres": "^3.4.8",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
     "react-hook-form": "^7.72.0",
+    "sharp": "0.35.3",
     "tailwind-merge": "^3.5.0",
     "tailwindcss": "^4.2.2",
-    "typescript": "^6.0.2",
-    "xlsx": "^0.18.5",
     "zod": "^4.3.6"
   },
   "devDependencies": {
@@ -70,13 +75,15 @@
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
     "@types/better-sqlite3": "^7.6.13",
+    "@types/jsdom": "^28.0.3",
     "@types/nodemailer": "^8.0.1",
     "@vitejs/plugin-react": "^6.0.1",
     "drizzle-kit": "^0.31.10",
     "eslint": "^9.39.4",
-    "eslint-config-next": "^16.2.1",
+    "eslint-config-next": "^16.3.0",
     "jsdom": "^29.0.1",
     "tsx": "^4.23.1",
+    "typescript": "^5.9.3",
     "vitest": "^4.1.1"
   }
 }

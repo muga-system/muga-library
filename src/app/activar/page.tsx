@@ -14,6 +14,8 @@ export default function ActivatePage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState(false)
+  const [emailSent, setEmailSent] = useState(false)
+  const [temporaryPassword, setTemporaryPassword] = useState("")
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -37,6 +39,8 @@ export default function ActivatePage() {
         throw new Error(data.error || "Error al activar")
       }
 
+      setEmailSent(Boolean(data.emailSent))
+      setTemporaryPassword(data.temporaryPassword || "")
       setSuccess(true)
     } catch (err: any) {
       setError(err.message)
@@ -56,9 +60,17 @@ export default function ActivatePage() {
             ¡Biblioteca Activada!
           </h1>
           <p className="text-slate-600 dark:text-slate-400 mb-6">
-            Las credenciales han sido enviadas a <strong>{email}</strong>. 
-            Revisa tu bandeja de entrada (y spam).
+            {emailSent
+              ? <>Las credenciales fueron enviadas a <strong>{email}</strong>. Revisá tu bandeja de entrada (y spam).</>
+              : <>La biblioteca quedó activada, pero no pudimos enviar el correo. Guardá las credenciales que aparecen abajo y configurá el SMTP antes de volver a activar otra biblioteca.</>}
           </p>
+          {!emailSent && temporaryPassword && (
+            <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-left text-sm text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100">
+              <p><strong>Usuario:</strong> {email}</p>
+              <p className="mt-1"><strong>Contraseña temporal:</strong> <span className="font-mono">{temporaryPassword}</span></p>
+              <p className="mt-2 text-xs">Esta contraseña se muestra una sola vez. Copiala antes de salir de esta pantalla.</p>
+            </div>
+          )}
           <div className="space-y-3">
             <Link
               href="/iniciar-sesion"

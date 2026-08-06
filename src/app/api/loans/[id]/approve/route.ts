@@ -1,10 +1,11 @@
-import { approveLoan } from "@/lib/services/database"
-import { requireApiAdmin } from "@/lib/api/auth"
+import { approveLoan, getLoanById } from "@/lib/services/database"
+import { requireApiStaff } from "@/lib/api/auth"
+import { isAdmin } from "@/lib/auth/service"
 import { apiError, apiSuccess, parseJsonBody } from "@/lib/api/http"
 import { approveLoanSchema, idParamSchema } from "@/lib/api/schemas"
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const auth = await requireApiAdmin()
+  const auth = await requireApiStaff()
   if (!auth.ok) return auth.response
 
   const parsedParams = idParamSchema.safeParse(await params)
@@ -16,6 +17,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!parsedBody.success) return parsedBody.response
 
   try {
+    const existing = await getLoanById(parsedParams.data.id, isAdmin(auth.user) ? undefined : auth.user.id)
+    if (!existing) return apiError(404, "LOAN_NOT_FOUND", "Loan not found")
     const loan = await approveLoan(parsedParams.data.id, auth.user.id)
     if (!loan) {
       return apiError(404, "LOAN_NOT_FOUND", "Loan not found")

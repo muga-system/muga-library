@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-const requireApiAdmin = vi.fn()
+const requireApiStaff = vi.fn()
 const getAllDatabases = vi.fn()
 const createDatabase = vi.fn()
 
 vi.mock("@/lib/api/auth", () => ({
-  requireApiAdmin,
+  requireApiStaff,
 }))
 
 vi.mock("@/lib/services/database", () => ({
@@ -20,7 +20,7 @@ describe("/api/databases route", () => {
   })
 
   it("returns 401 when user is not authenticated", async () => {
-    requireApiAdmin.mockResolvedValue({
+    requireApiStaff.mockResolvedValue({
       ok: false,
       response: Response.json({ error: "Authentication required", code: "AUTH_REQUIRED" }, { status: 401 }),
     })
@@ -34,7 +34,7 @@ describe("/api/databases route", () => {
   })
 
   it("returns 400 on invalid payload", async () => {
-    requireApiAdmin.mockResolvedValue({
+    requireApiStaff.mockResolvedValue({
       ok: true,
       user: { id: "user-id" },
     })
@@ -54,7 +54,7 @@ describe("/api/databases route", () => {
   })
 
   it("creates database with valid payload", async () => {
-    requireApiAdmin.mockResolvedValue({
+    requireApiStaff.mockResolvedValue({
       ok: true,
       user: { id: "user-id" },
     })
@@ -70,6 +70,6 @@ describe("/api/databases route", () => {
     )
 
     expect(response.status).toBe(201)
-    expect(createDatabase).toHaveBeenCalledWith({ name: "Catalogo", description: "desc" })
+    expect(createDatabase).toHaveBeenCalledWith({ name: "Catalogo", description: "desc", ownerId: "user-id" })
   })
 })

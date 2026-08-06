@@ -1,10 +1,11 @@
 import { updateDatabase, deleteDatabase, getDatabaseById } from "@/lib/services/database"
-import { requireApiAdmin } from "@/lib/api/auth"
+import { requireApiStaff } from "@/lib/api/auth"
+import { isAdmin } from "@/lib/auth/service"
 import { apiError, apiSuccess, parseJsonBody } from "@/lib/api/http"
 import { idParamSchema, updateDatabaseSchema } from "@/lib/api/schemas"
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const auth = await requireApiAdmin()
+  const auth = await requireApiStaff()
   if (!auth.ok) return auth.response
 
   const parsedParams = idParamSchema.safeParse(await params)
@@ -13,7 +14,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   }
 
   try {
-    const database = await getDatabaseById(parsedParams.data.id)
+    const database = await getDatabaseById(parsedParams.data.id, isAdmin(auth.user) ? undefined : auth.user.id)
     if (!database) {
       return apiError(404, "DATABASE_NOT_FOUND", "Database not found")
     }
@@ -25,7 +26,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
 }
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const auth = await requireApiAdmin()
+  const auth = await requireApiStaff()
   if (!auth.ok) return auth.response
 
   const parsedParams = idParamSchema.safeParse(await params)
@@ -40,7 +41,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     const database = await updateDatabase(parsedParams.data.id, {
       name: parsedBody.data.name,
       description: parsedBody.data.description,
-    })
+    }, isAdmin(auth.user) ? undefined : auth.user.id)
 
     if (!database) {
       return apiError(404, "DATABASE_NOT_FOUND", "Database not found")
@@ -54,7 +55,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 }
 
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const auth = await requireApiAdmin()
+  const auth = await requireApiStaff()
   if (!auth.ok) return auth.response
 
   const parsedParams = idParamSchema.safeParse(await params)
@@ -63,12 +64,12 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
   }
 
   try {
-    const existing = await getDatabaseById(parsedParams.data.id)
+    const existing = await getDatabaseById(parsedParams.data.id, isAdmin(auth.user) ? undefined : auth.user.id)
     if (!existing) {
       return apiError(404, "DATABASE_NOT_FOUND", "Database not found")
     }
 
-    await deleteDatabase(parsedParams.data.id)
+    await deleteDatabase(parsedParams.data.id, isAdmin(auth.user) ? undefined : auth.user.id)
     return apiSuccess({ success: true })
   } catch (error) {
     console.error("Error deleting database:", error)

@@ -6,6 +6,7 @@ import { RecordsTable } from "./records-table"
 import { CatalogCards } from "./catalog-cards"
 import { CatalogPagination } from "@/components/catalog-pagination"
 import { MugaHeader } from "@/components/muga-header"
+import { requireStaffPage, staffOwnerId } from "@/lib/auth/page"
 
 function normalizeRecordData(data: unknown): Record<string, unknown> {
   if (typeof data && typeof data === "object") {
@@ -22,6 +23,8 @@ export default async function DatabaseDetailPage({
   searchParams: Promise<{ page?: string; q?: string; view?: string }>
 }) {
   const { id } = await params
+  const user = await requireStaffPage()
+  const ownerId = staffOwnerId(user)
   const { page, q, view } = await searchParams
   const gallery = view !== "table"
   const pageSize = gallery ? 20 : 50
@@ -30,10 +33,10 @@ export default async function DatabaseDetailPage({
 
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)
   
-  let database = isUuid ? await getDatabaseById(id) : null
+  let database = isUuid ? await getDatabaseById(id, ownerId) : null
 
   if (!database) {
-    database = await getDatabaseBySlug(id)
+    database = await getDatabaseBySlug(id, ownerId)
   }
 
   if (!database) {
@@ -41,10 +44,10 @@ export default async function DatabaseDetailPage({
   }
 
   const query = q?.trim() || ""
-  const searchResult = query ? await searchRecords(query, database.id, { limit: pageSize, offset }) : null
+  const searchResult = query ? await searchRecords(query, database.id, { limit: pageSize, offset }, ownerId) : null
   const result = searchResult
-    ? { records: searchResult, total: await countSearchRecords(query, database.id) }
-    : await getRecordsByDatabase(database.id, { limit: pageSize, offset })
+    ? { records: searchResult, total: await countSearchRecords(query, database.id, ownerId) }
+    : await getRecordsByDatabase(database.id, { limit: pageSize, offset }, ownerId)
   const { records, total } = result
   const pageCount = Math.max(1, Math.ceil(total / pageSize))
   const pageHref = (nextPage: number) => {

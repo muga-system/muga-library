@@ -2,11 +2,13 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { ArrowLeft, BookOpen, User, Calendar, CheckCircle, Clock, AlertTriangle } from "lucide-react"
 import { getLoanById } from "@/lib/services/database"
+import { requireStaffPage, staffOwnerId } from "@/lib/auth/page"
 import { DevolverButton } from "./devolver-button"
 
 export default async function DetallePrestamoPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const prestamo = await getLoanById(id)
+  const user = await requireStaffPage()
+  const prestamo = await getLoanById(id, staffOwnerId(user))
   
   if (!prestamo) {
     notFound()

@@ -86,5 +86,56 @@ export const updateSettingsSchema = z.object({
       "LC - Library of Congress",
       "DDC - Dewey Decimal Classification",
     ]).optional(),
-  }),
+  }).optional(),
+  profile: z.object({
+    full_name: z.string().trim().max(200, "full_name is too long").optional(),
+    library_name: z.string().trim().max(255, "library_name is too long").optional(),
+    avatar_url: z.union([z.string().url().max(2048), z.literal("")]).optional(),
+    email: z.string().trim().email().max(320).optional(),
+    current_password: z.string().min(1).max(128).optional(),
+    password: z.string().min(8).max(128).optional(),
+  }).optional(),
+}).superRefine((value, context) => {
+  if (!value.settings && !value.profile) {
+    context.addIssue({ code: "custom", message: "settings or profile is required", path: [] })
+  }
+
+  const changesSensitiveData = Boolean(value.profile?.email || value.profile?.password)
+  if (changesSensitiveData && !value.profile?.current_password) {
+    context.addIssue({ code: "custom", message: "current_password is required for email or password changes", path: ["profile", "current_password"] })
+  }
+})
+
+export const loginSchema = z.object({
+  email: z.string().trim().email().max(320),
+  password: z.string().min(1).max(128),
+})
+
+export const registerSchema = z.object({
+  email: z.string().trim().email().max(320),
+  password: z.string().min(8).max(128),
+})
+
+export const activateCouponSchema = z.object({
+  code: z.string().trim().min(1).max(100),
+  email: z.string().trim().email().max(320),
+  libraryName: z.string().trim().min(1).max(255),
+  libraryDescription: z.string().trim().max(2000).optional(),
+})
+
+export const couponRequestSchema = z.object({
+  email: z.string().trim().email().max(320),
+  libraryName: z.string().trim().min(1).max(255),
+  description: z.string().trim().max(2000).optional(),
+})
+
+export const processCouponRequestSchema = z.object({
+  requestId: z.string().uuid(),
+  action: z.enum(["approve", "reject"]),
+  adminNotes: z.string().trim().max(2000).optional(),
+})
+
+export const manualCouponSchema = z.object({
+  createForEmail: z.string().trim().email().max(320),
+  libraryName: z.string().trim().min(1).max(255),
 })

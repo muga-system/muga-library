@@ -56,6 +56,12 @@ pnpm check
   - disabled in production (`404`)
   - bootstrap secret header: `x-admin-bootstrap-secret`
 
+## Publicación en Hostinger
+
+La instalación pública prevista es [bibliotecas.muga.dev](https://bibliotecas.muga.dev). Como el producto usa Next.js SSR/API, SQLite y uploads persistentes, se publica como aplicación Node.js de Hostinger.
+
+La guía operativa está en [docs/DEPLOY-HOSTINGER.md](docs/DEPLOY-HOSTINGER.md). Incluye variables de entorno, migraciones, health-check, backups y restauración.
+
 ## Deploy on a persistent Node server
 1. Push repository to GitHub.
 2. Configure `.env.local` with a writable `DATABASE_URL`.

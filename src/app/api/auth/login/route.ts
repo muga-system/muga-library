@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server"
 import { authenticateUser, createSession, setSessionCookie } from "@/lib/auth/service"
+import { parseJsonBody } from "@/lib/api/http"
+import { loginSchema } from "@/lib/api/schemas"
+import { rateLimit } from "@/lib/security/rate-limit"
 
 export async function POST(request: Request) {
-  const body = await request.json().catch(() => null)
-  const email = typeof body?.email === "string" ? body.email : ""
-  const password = typeof body?.password === "string" ? body.password : ""
+  const limited = rateLimit(request, "auth-login", 10, 15 * 60 * 1000)
+  if (limited) return limited
+  const parsed = await parseJsonBody(request, loginSchema, { maxBytes: 16 * 1024 })
+  if (!parsed.success) return parsed.response
+  const { email, password } = parsed.data
   const user = await authenticateUser(email, password)
 
   if (!user) {

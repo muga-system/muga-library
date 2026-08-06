@@ -5,8 +5,8 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { ArrowLeft, Upload, FileText, CheckCircle, AlertCircle, X, Database, Table, Plus, Loader2, Hand, Library } from "lucide-react"
 import Papa from "papaparse"
-import * as XLSX from "xlsx"
 import { useNotifications } from "@/components/notifications-provider"
+import { parseXlsx } from "@/lib/import/xlsx"
 
 interface DatabaseItem {
   id: string
@@ -187,8 +187,12 @@ export default function ImportarPage() {
 
   function processFile(file: File) {
     const ext = file.name.split(".").pop()?.toLowerCase()
-    if (!["csv", "xlsx", "xls"].includes(ext || "")) {
-      notifications.warning("Formato no valido", "Selecciona un archivo .csv, .xlsx o .xls")
+    if (!["csv", "xlsx"].includes(ext || "")) {
+      notifications.warning("Formato no válido", "Seleccioná un archivo .csv o .xlsx")
+      return
+    }
+    if (file.size > 50 * 1024 * 1024) {
+      notifications.warning("Archivo demasiado grande", "El archivo debe pesar menos de 50MB.")
       return
     }
 
@@ -216,15 +220,12 @@ export default function ImportarPage() {
           setLoading(false)
         }
       })
-    } else if (ext === "xlsx" || ext === "xls") {
+    } else if (ext === "xlsx") {
       const reader = new FileReader()
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         try {
           const arrayBuffer = e.target?.result as ArrayBuffer
-          const data = new Uint8Array(arrayBuffer)
-          const workbook = XLSX.read(data, { type: "array" })
-          const firstSheet = workbook.Sheets[workbook.SheetNames[0]]
-          const jsonData = XLSX.utils.sheet_to_json(firstSheet, { defval: "" }) as Record<string, unknown>[]
+          const jsonData = await parseXlsx(arrayBuffer)
           
           if (!jsonData || jsonData.length === 0) {
             notifications.warning("Archivo sin datos", "No se encontraron filas para importar.")
@@ -434,7 +435,7 @@ export default function ImportarPage() {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".csv,.xlsx,.xls"
+                accept=".csv,.xlsx"
                 onChange={handleFileSelect}
                 className="hidden"
               />
@@ -457,7 +458,7 @@ export default function ImportarPage() {
                   o haz clic para seleccionar archivos
                 </p>
                 <p className="text-xs text-slate-400">
-                  Formatos: CSV, Excel (.xlsx, .xls) - Máximo 100MB
+                  Formatos: CSV, Excel (.xlsx) - Máximo 50MB
                 </p>
               </div>
             </div>

@@ -1,10 +1,11 @@
 import { getRecordById, updateRecord, deleteRecord } from "@/lib/services/database"
-import { requireApiAdmin } from "@/lib/api/auth"
+import { requireApiStaff } from "@/lib/api/auth"
+import { isAdmin } from "@/lib/auth/service"
 import { apiError, apiSuccess, parseJsonBody } from "@/lib/api/http"
 import { idParamSchema, updateRecordSchema } from "@/lib/api/schemas"
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const auth = await requireApiAdmin()
+  const auth = await requireApiStaff()
   if (!auth.ok) return auth.response
 
   const parsedParams = idParamSchema.safeParse(await params)
@@ -13,7 +14,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   }
 
   try {
-    const record = await getRecordById(parsedParams.data.id)
+    const record = await getRecordById(parsedParams.data.id, isAdmin(auth.user) ? undefined : auth.user.id)
     if (!record) {
       return apiError(404, "RECORD_NOT_FOUND", "Record not found")
     }
@@ -25,7 +26,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
 }
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const auth = await requireApiAdmin()
+  const auth = await requireApiStaff()
   if (!auth.ok) return auth.response
 
   const parsedParams = idParamSchema.safeParse(await params)
@@ -37,7 +38,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   if (!parsedBody.success) return parsedBody.response
 
   try {
-    const existing = await getRecordById(parsedParams.data.id)
+    const existing = await getRecordById(parsedParams.data.id, isAdmin(auth.user) ? undefined : auth.user.id)
     if (!existing) {
       return apiError(404, "RECORD_NOT_FOUND", "Record not found")
     }
@@ -46,7 +47,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       data: parsedBody.data.data,
       totalEjemplares: parsedBody.data.total_ejemplares,
       disponibles: parsedBody.data.disponibles,
-    })
+    }, isAdmin(auth.user) ? undefined : auth.user.id)
     return apiSuccess(record)
   } catch (error) {
     console.error("Error updating record:", error)
@@ -55,7 +56,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 }
 
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const auth = await requireApiAdmin()
+  const auth = await requireApiStaff()
   if (!auth.ok) return auth.response
 
   const parsedParams = idParamSchema.safeParse(await params)
@@ -64,12 +65,12 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
   }
 
   try {
-    const existing = await getRecordById(parsedParams.data.id)
+    const existing = await getRecordById(parsedParams.data.id, isAdmin(auth.user) ? undefined : auth.user.id)
     if (!existing) {
       return apiError(404, "RECORD_NOT_FOUND", "Record not found")
     }
 
-    await deleteRecord(parsedParams.data.id)
+    await deleteRecord(parsedParams.data.id, isAdmin(auth.user) ? undefined : auth.user.id)
     return apiSuccess({ success: true })
   } catch (error) {
     console.error("Error deleting record:", error)

@@ -12,7 +12,17 @@ export function apiSuccess<T>(data: T, status = 200) {
 export async function parseJsonBody<T>(
   request: Request,
   schema: ZodSchema<T>,
+  options?: { maxBytes?: number },
 ): Promise<{ success: true; data: T } | { success: false; response: NextResponse }> {
+  const maxBytes = options?.maxBytes ?? 256 * 1024
+  const contentLength = Number(request.headers.get("content-length") || 0)
+  if (contentLength > maxBytes) {
+    return {
+      success: false,
+      response: apiError(413, "BODY_TOO_LARGE", "Request body is too large"),
+    }
+  }
+
   let json: unknown
 
   try {

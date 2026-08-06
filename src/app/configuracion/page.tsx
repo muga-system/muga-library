@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { User, Building2, Bell, Shield, Download, Save, Check, Camera } from "lucide-react"
-import { getCurrentUser } from "@/lib/auth/client"
 import { uploadImage } from "@/lib/uploads/client"
 import { useNotifications } from "@/components/notifications-provider"
 import { MugaHeader } from "@/components/muga-header"
@@ -20,6 +19,7 @@ export default function ConfiguracionPage() {
     nombre: "",
     email: "",
     newEmail: "",
+    currentPassword: "",
     biblioteca: "",
     avatarUrl: "",
     newPassword: "",
@@ -36,25 +36,8 @@ export default function ConfiguracionPage() {
   })
 
   useEffect(() => {
-    loadUser()
     loadSettings()
   }, [])
-
-  async function loadUser() {
-    const { user } = await getCurrentUser()
-    if (user) {
-      setUser(user)
-      setProfile({
-        nombre: "",
-        email: user.email || "",
-        newEmail: "",
-        biblioteca: "",
-        avatarUrl: "",
-        newPassword: "",
-        confirmPassword: "",
-      })
-    }
-  }
 
   async function loadSettings() {
     try {
@@ -64,6 +47,16 @@ export default function ConfiguracionPage() {
 
       if (data?.settings) {
         setSettings((prev) => ({ ...prev, ...data.settings }))
+      }
+      if (data?.profile) {
+        setUser(data.profile)
+        setProfile((prev) => ({
+          ...prev,
+          nombre: data.profile.fullName || "",
+          email: data.profile.email || "",
+          biblioteca: data.profile.libraryName || "",
+          avatarUrl: data.profile.avatarUrl || "",
+        }))
       }
     } catch (error) {
       console.error('Error loading settings:', error)
@@ -109,16 +102,10 @@ export default function ConfiguracionPage() {
           return
         }
 
-        const payload: {
-          data: Record<string, string>
-          email?: string
-          password?: string
-        } = {
-          data: {
-            full_name: profile.nombre,
-            biblioteca: profile.biblioteca,
-            avatar_url: profile.avatarUrl,
-          },
+        const payload: Record<string, string> = {
+          full_name: profile.nombre,
+          library_name: profile.biblioteca,
+          avatar_url: profile.avatarUrl,
         }
 
         if (profile.newEmail.trim()) {
@@ -129,16 +116,27 @@ export default function ConfiguracionPage() {
           payload.password = profile.newPassword.trim()
         }
 
-        const res = await fetch('/api/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ profile: payload.data }) })
-        if (!res.ok) throw new Error('PROFILE_UPDATE_FAILED')
+        if (profile.currentPassword.trim()) {
+          payload.current_password = profile.currentPassword.trim()
+        }
+
+        const res = await fetch('/api/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ profile: payload }) })
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) throw new Error(data?.error || 'PROFILE_UPDATE_FAILED')
+
+        if (data?.profile) {
+          setUser(data.profile)
+          setProfile((prev) => ({ ...prev, email: data.profile.email || prev.email }))
+        }
 
         if (profile.newEmail.trim()) {
-          notifications.info("Cambio de email solicitado", "Revisa tu correo para confirmar el nuevo email.")
+          notifications.info("Email actualizado", "El cambio se aplicó de inmediato. Volvé a iniciar sesión si la sesión actual caduca.")
         }
 
         setProfile((prev) => ({
           ...prev,
           newEmail: "",
+          currentPassword: "",
           newPassword: "",
           confirmPassword: "",
         }))
@@ -326,8 +324,23 @@ export default function ConfiguracionPage() {
                         className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
                         placeholder="nuevo@correo.com"
                       />
-                      <p className="mt-1 text-xs text-slate-500">Recibirás un email para confirmar el cambio.</p>
+                      <p className="mt-1 text-xs text-slate-500">El cambio se aplica al guardar y requiere tu contraseña actual.</p>
                     </div>
+
+                    {(profile.newEmail || profile.newPassword) && (
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                          Contraseña actual
+                        </label>
+                        <input
+                          type="password"
+                          value={profile.currentPassword}
+                          onChange={(e) => setProfile({ ...profile, currentPassword: e.target.value })}
+                          className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
+                          placeholder="Necesaria para cambiar email o contraseña"
+                        />
+                      </div>
+                    )}
 
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div>
