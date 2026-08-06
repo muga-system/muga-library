@@ -4,6 +4,8 @@ import { parseJsonBody } from "@/lib/api/http"
 import { registerSchema } from "@/lib/api/schemas"
 import { rateLimit } from "@/lib/security/rate-limit"
 
+export const dynamic = "force-dynamic"
+
 export async function POST(request: Request) {
   const limited = rateLimit(request, "auth-register", 5, 15 * 60 * 1000)
   if (limited) return limited

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { validateCoupon } from "@/lib/services/coupons"
 import { rateLimit } from "@/lib/security/rate-limit"
 
+export const dynamic = "force-dynamic"
+
 export async function POST(request: NextRequest) {
   try {
     const limited = rateLimit(request, "coupon-validate", 20, 15 * 60 * 1000)

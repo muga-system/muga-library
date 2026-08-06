@@ -4,6 +4,8 @@ import { isAdmin } from "@/lib/auth/service"
 import { apiError, apiSuccess, parseJsonBody } from "@/lib/api/http"
 import { approveLoanSchema, idParamSchema } from "@/lib/api/schemas"
 
+export const dynamic = "force-dynamic"
+
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireApiStaff()
   if (!auth.ok) return auth.response

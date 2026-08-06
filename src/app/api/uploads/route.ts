@@ -3,6 +3,8 @@ import { join } from "node:path"
 import { NextResponse } from "next/server"
 import { getCurrentUser } from "@/lib/auth/service"
 
+export const dynamic = "force-dynamic"
+
 const allowed = new Map([["image/jpeg", "jpg"], ["image/png", "png"], ["image/webp", "webp"], ["image/gif", "gif"]])
 const limits = { avatar: 3 * 1024 * 1024, cover: 5 * 1024 * 1024 }
 

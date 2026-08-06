@@ -8,6 +8,8 @@ import { parseJsonBody } from "@/lib/api/http"
 import { couponRequestSchema } from "@/lib/api/schemas"
 import { rateLimit } from "@/lib/security/rate-limit"
 
+export const dynamic = "force-dynamic"
+
 export async function POST(request: NextRequest) {
   try {
     const limited = rateLimit(request, "coupon-request", 5, 15 * 60 * 1000)

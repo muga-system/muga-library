@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 import { createUser } from "@/lib/auth/service"
 
+export const dynamic = "force-dynamic"
+
 export async function POST(request: Request) {
   if (process.env.NODE_ENV === "production") {
     return NextResponse.json({ error: "Not found", code: "NOT_FOUND" }, { status: 404 })
