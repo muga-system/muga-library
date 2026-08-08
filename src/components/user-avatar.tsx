@@ -25,7 +25,7 @@ function getInitial(user: AvatarUser) {
 
 export function UserAvatar({ initialUser, href = "/configuracion" }: UserAvatarProps) {
   const { user, loading } = useAuth()
-  const displayUser = loading ? initialUser ?? null : user
+  const displayUser = user ?? (loading ? initialUser ?? null : null)
   const avatarUrl = displayUser?.user_metadata?.avatar_url || ""
   const [imageError, setImageError] = useState(false)
 

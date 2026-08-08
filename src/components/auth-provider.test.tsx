@@ -27,6 +27,13 @@ describe("AuthProvider", () => {
     expect(screen.getByTestId("session")).toHaveTextContent("has-session")
   })
 
+  it("starts with the user supplied by the server", async () => {
+    const initialUser = { id: "u1", email: "server@example.com", app_metadata: { role: "admin" }, user_metadata: { role: "admin" } }
+    render(<AuthProvider initialUser={initialUser}><TestComponent /></AuthProvider>)
+    expect(screen.getByTestId("user")).toHaveTextContent("server@example.com")
+    await waitFor(() => expect(mockGetCurrentUser).toHaveBeenCalled())
+  })
+
   it("signs out through the local auth client", async () => {
     render(<AuthProvider><TestComponent /></AuthProvider>)
     await waitFor(() => expect(screen.getByTestId("loading")).toHaveTextContent("false"))

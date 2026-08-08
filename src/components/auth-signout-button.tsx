@@ -1,6 +1,5 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { useAuth } from "@/components/auth-provider"
 import { LoaderCircle, LogOut } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -13,15 +12,10 @@ type AuthSignOutButtonProps = {
 export function AuthSignOutButton({ initialAuthenticated = false }: AuthSignOutButtonProps) {
   const { user, loading, signOut } = useAuth()
   const router = useRouter()
-  const [authenticated, setAuthenticated] = useState(initialAuthenticated)
-
-  useEffect(() => {
-    if (!loading) setAuthenticated(Boolean(user))
-  }, [loading, user])
+  const authenticated = Boolean(user) || (loading && initialAuthenticated)
 
   const handleSignOut = async () => {
     await signOut()
-    setAuthenticated(false)
     router.push("/iniciar-sesion")
   }
 

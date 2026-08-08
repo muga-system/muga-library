@@ -18,6 +18,10 @@ const nextConfig = {
     "/*": ["./node_modules/next/dist/lib/metadata/**/*", "./drizzle/**/*"],
   },
   async headers() {
+    const privateNoStore = [
+      { key: "Cache-Control", value: "private, no-store, max-age=0, must-revalidate" },
+    ]
+
     return [
       {
         source: "/(.*)",
@@ -28,6 +32,30 @@ const nextConfig = {
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
         ],
       },
+      ...[
+        "/",
+        "/admin/:path*",
+        "/bases-de-datos/:path*",
+        "/buscar/:path*",
+        "/catalogo/:path*",
+        "/configuracion/:path*",
+        "/cdu/:path*",
+        "/importar/:path*",
+        "/libro/:path*",
+        "/mis-solicitudes/:path*",
+        "/prestamos/:path*",
+        "/solicitar/:path*",
+        "/api/auth/:path*",
+        "/api/admin/:path*",
+        "/api/coupon-requests",
+        "/api/coupons/:path*",
+        "/api/databases/:path*",
+        "/api/loans/:path*",
+        "/api/my/:path*",
+        "/api/records/:path*",
+        "/api/settings",
+        "/api/uploads",
+      ].map((source) => ({ source, headers: privateNoStore })),
     ]
   },
 }

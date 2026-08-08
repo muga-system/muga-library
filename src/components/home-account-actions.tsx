@@ -22,7 +22,7 @@ function getPanelHref(role: string) {
 
 export function HomeAccountActions({ initialUser }: { initialUser?: InitialUser | null }) {
   const { user, loading } = useAuth()
-  const displayUser = loading ? initialUser ?? null : user
+  const displayUser = user ?? (loading ? initialUser ?? null : null)
 
   if (loading && initialUser === undefined) {
     return (

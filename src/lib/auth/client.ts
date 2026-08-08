@@ -16,6 +16,7 @@ async function request(path: string, options?: RequestInit): Promise<AuthRespons
     const response = await fetch(path, {
       ...options,
       cache: "no-store",
+      credentials: "same-origin",
       headers: { "Content-Type": "application/json", ...(options?.headers || {}) },
     })
     const body = await response.json().catch(() => ({}))

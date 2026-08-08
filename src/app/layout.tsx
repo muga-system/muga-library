@@ -7,6 +7,7 @@ import { ThemeFooterToggle } from "@/components/theme-footer-toggle"
 import { NotificationsProvider } from "@/components/notifications-provider"
 import { ConfirmProvider } from "@/components/confirm-provider"
 import Link from "next/link"
+import { getCurrentUser } from "@/lib/auth/service"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -33,18 +34,23 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const initialUser = await getCurrentUser()
+
   return (
     <html lang="es" suppressHydrationWarning>
       <body className={`${inter.className} min-h-dvh flex flex-col bg-[hsl(var(--background))] text-[hsl(var(--foreground))]`}>
         <ThemeProvider>
           <NotificationsProvider>
             <ConfirmProvider>
-              <AuthProvider>
+              <AuthProvider initialUser={initialUser}>
                 <main className="flex-1">{children}</main>
                 <footer className="border-t border-slate-200/70 bg-transparent dark:border-slate-800/70">
                   <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-2">
