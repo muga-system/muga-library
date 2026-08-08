@@ -14,7 +14,7 @@ const nextConfig = {
     "*": ["./data/**", "./backups/**", "./.env*", "./.git/**"],
   },
   outputFileTracingIncludes: {
-    "/*": ["./node_modules/next/dist/lib/metadata/**/*"],
+    "/*": ["./node_modules/next/dist/lib/metadata/**/*", "./drizzle/**/*"],
   },
   async headers() {
     return [

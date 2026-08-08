@@ -1,6 +1,7 @@
 import { mkdirSync } from "node:fs"
 import { dirname, resolve } from "node:path"
 import { drizzle } from "drizzle-orm/better-sqlite3"
+import { migrate } from "drizzle-orm/better-sqlite3/migrator"
 import type { Database as BetterSqliteDatabase } from "better-sqlite3"
 import { NodeSqliteDatabase } from "./node-sqlite"
 import * as schema from "./schema"
@@ -21,4 +22,9 @@ if (process.env.NEXT_PHASE !== "phase-production-build") {
 }
 
 export const db = drizzle(sqlite as unknown as BetterSqliteDatabase, { schema })
+
+if (process.env.NEXT_PHASE !== "phase-production-build" && process.env.NODE_ENV !== "test") {
+  migrate(db, { migrationsFolder: resolve(process.cwd(), "drizzle") })
+}
+
 export { sqlite }
