@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises"
 import { join, resolve, sep } from "node:path"
 import { NextResponse } from "next/server"
+import { getUploadsDirectory } from "@/lib/storage"
 
 export const dynamic = "force-dynamic"
 
@@ -8,7 +9,7 @@ const contentTypes: Record<string, string> = { jpg: "image/jpeg", jpeg: "image/j
 
 export async function GET(_request: Request, { params }: { params: Promise<{ path: string[] }> }) {
   const segments = await params
-  const root = resolve(/* turbopackIgnore: true */ process.cwd(), process.env.UPLOADS_DIR || "data/uploads")
+  const root = resolve(getUploadsDirectory())
   const filePath = resolve(/* turbopackIgnore: true */ root, join(...segments.path))
   if (filePath !== root && !filePath.startsWith(`${root}${sep}`)) return NextResponse.json({ error: "Not found" }, { status: 404 })
   try {

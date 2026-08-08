@@ -2,6 +2,7 @@ import { mkdir, writeFile } from "node:fs/promises"
 import { join } from "node:path"
 import { NextResponse } from "next/server"
 import { getCurrentUser } from "@/lib/auth/service"
+import { getUploadsDirectory } from "@/lib/storage"
 
 export const dynamic = "force-dynamic"
 
@@ -36,7 +37,7 @@ export async function POST(request: Request) {
 
   const filename = `${crypto.randomUUID()}.${extension}`
   const relativeDirectory = join(kind === "avatar" ? "avatars" : "book-covers", user.id)
-  const directory = join(/* turbopackIgnore: true */ process.cwd(), process.env.UPLOADS_DIR || "data/uploads", relativeDirectory)
+  const directory = join(getUploadsDirectory(), relativeDirectory)
   await mkdir(directory, { recursive: true })
   await writeFile(join(/* turbopackIgnore: true */ directory, filename), Buffer.from(await file.arrayBuffer()))
 
