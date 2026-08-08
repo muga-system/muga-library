@@ -2,6 +2,7 @@ import { mkdir, writeFile } from "node:fs/promises"
 import { join } from "node:path"
 import { NextResponse } from "next/server"
 import { getCurrentUser } from "@/lib/auth/service"
+import { updateProfile } from "@/lib/services/profiles"
 import { getUploadsDirectory } from "@/lib/storage"
 
 export const dynamic = "force-dynamic"
@@ -41,5 +42,8 @@ export async function POST(request: Request) {
   await mkdir(directory, { recursive: true })
   await writeFile(join(/* turbopackIgnore: true */ directory, filename), Buffer.from(await file.arrayBuffer()))
 
-  return NextResponse.json({ url: `/api/uploads/${relativeDirectory.replaceAll("\\", "/")}/${filename}` }, { status: 201, headers: { "X-Content-Type-Options": "nosniff" } })
+  const url = `/api/uploads/${relativeDirectory.replaceAll("\\", "/")}/${filename}`
+  const profile = kind === "avatar" ? await updateProfile(user.id, { avatarUrl: url }) : null
+
+  return NextResponse.json({ url, profile }, { status: 201, headers: { "X-Content-Type-Options": "nosniff" } })
 }

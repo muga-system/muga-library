@@ -83,7 +83,8 @@ export default function ConfiguracionPage() {
     try {
       const publicUrl = await uploadImage(file, "avatar")
       setProfile((prev) => ({ ...prev, avatarUrl: publicUrl }))
-      notifications.success("Imagen cargada", "Guarda cambios para aplicar la foto del perfil.")
+      await refreshSession()
+      notifications.success("Foto guardada", "La nueva imagen ya está aplicada a tu perfil.")
     } catch (error) {
       notifications.error("No se pudo cargar la imagen", "Intenta nuevamente con otra imagen.")
     }
@@ -254,11 +255,12 @@ export default function ConfiguracionPage() {
                       )}
                     </div>
                     <div>
-                      <p className="text-sm text-slate-500">Foto de perfil</p>
+                       <p className="text-sm text-slate-500">Foto de perfil</p>
+                       <p className="text-xs text-slate-400">Se guarda automáticamente al subirla.</p>
                       <button
                         type="button"
                         onClick={() => avatarInputRef.current?.click()}
-                        className="inline-flex items-center gap-1 text-sm text-slate-700 hover:text-slate-900 underline"
+                         className="inline-flex cursor-pointer items-center gap-1 text-sm text-slate-700 underline hover:text-slate-900"
                       >
                         <Camera className="h-3.5 w-3.5" />
                         Subir imagen
