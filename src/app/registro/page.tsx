@@ -2,12 +2,16 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { BookOpen, CheckCircle2, Loader2 } from "lucide-react"
 import { signUpWithEmail } from "@/lib/auth/client"
 import { MugaHeader } from "@/components/muga-header"
 import { PasswordInput } from "@/components/password-input"
+import { useAuth } from "@/components/auth-provider"
 
 export default function RegistroPage() {
+  const router = useRouter()
+  const { refreshSession } = useAuth()
   const [nextPath, setNextPath] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -50,7 +54,9 @@ export default function RegistroPage() {
       return
     }
 
-    window.location.assign(nextPath || "/catalogo")
+    await refreshSession()
+    router.replace(nextPath || "/catalogo")
+    router.refresh()
   }
 
   return (

@@ -2,7 +2,11 @@ export type ClientUser = {
   id: string
   email: string
   app_metadata: { role: string }
-  user_metadata: { role: string }
+  user_metadata: {
+    role: string
+    full_name?: string
+    avatar_url?: string
+  }
 }
 
 type AuthResponse = { user?: ClientUser; error?: { message: string; code?: string } }

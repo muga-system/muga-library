@@ -5,7 +5,9 @@ import Link from "next/link"
 import { AlertTriangle, Building2, Check, Clock, Copy, Home, Mail, RefreshCcw, X } from "lucide-react"
 import { MugaHeader } from "@/components/muga-header"
 import { AuthSignOutButton } from "@/components/auth-signout-button"
+import { UserAvatar } from "@/components/user-avatar"
 import { useNotifications } from "@/components/notifications-provider"
+import type { AuthUser } from "@/lib/auth/service"
 
 type CouponRequest = {
   id: string
@@ -33,7 +35,7 @@ function formatDate(value: string) {
   })
 }
 
-export function AdminIncorporacionesPanel({ initialAuthenticated = false }: { initialAuthenticated?: boolean }) {
+export function AdminIncorporacionesPanel({ initialAuthenticated = false, initialUser }: { initialAuthenticated?: boolean; initialUser?: AuthUser | null }) {
   const notifications = useNotifications()
   const [requests, setRequests] = useState<CouponRequest[]>([])
   const [loading, setLoading] = useState(true)
@@ -146,6 +148,7 @@ export function AdminIncorporacionesPanel({ initialAuthenticated = false }: { in
               Inicio
             </Link>
             <AuthSignOutButton initialAuthenticated={initialAuthenticated} />
+            <UserAvatar initialUser={initialUser} />
           </div>
         }
       />

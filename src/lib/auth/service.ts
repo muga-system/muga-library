@@ -13,7 +13,11 @@ export type AuthUser = {
   id: string
   email: string
   app_metadata: { role: string }
-  user_metadata: { role: string }
+  user_metadata: {
+    role: string
+    full_name?: string
+    avatar_url?: string
+  }
 }
 
 function toAuthUser(profile: typeof profiles.$inferSelect): AuthUser {
@@ -21,7 +25,11 @@ function toAuthUser(profile: typeof profiles.$inferSelect): AuthUser {
     id: profile.id,
     email: profile.email,
     app_metadata: { role: profile.role },
-    user_metadata: { role: profile.role },
+    user_metadata: {
+      role: profile.role,
+      full_name: profile.fullName || "",
+      avatar_url: profile.avatarUrl || "",
+    },
   }
 }
 

@@ -7,9 +7,11 @@ import { uploadImage } from "@/lib/uploads/client"
 import { useNotifications } from "@/components/notifications-provider"
 import { MugaHeader } from "@/components/muga-header"
 import { PasswordInput } from "@/components/password-input"
+import { useAuth } from "@/components/auth-provider"
 
 export default function ConfiguracionPage() {
   const notifications = useNotifications()
+  const { refreshSession } = useAuth()
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const [user, setUser] = useState<any>(null)
   const [activeTab, setActiveTab] = useState("perfil")
@@ -128,6 +130,7 @@ export default function ConfiguracionPage() {
         if (data?.profile) {
           setUser(data.profile)
           setProfile((prev) => ({ ...prev, email: data.profile.email || prev.email }))
+          await refreshSession()
         }
 
         if (profile.newEmail.trim()) {

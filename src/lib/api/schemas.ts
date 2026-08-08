@@ -90,7 +90,11 @@ export const updateSettingsSchema = z.object({
   profile: z.object({
     full_name: z.string().trim().max(200, "full_name is too long").optional(),
     library_name: z.string().trim().max(255, "library_name is too long").optional(),
-    avatar_url: z.union([z.string().url().max(2048), z.literal("")]).optional(),
+    avatar_url: z.union([
+      z.string().max(2048).url(),
+      z.string().max(2048).regex(/^\/api\/uploads\/[A-Za-z0-9_./-]+\.(?:jpg|jpeg|png|webp|gif)$/i),
+      z.literal(""),
+    ]).optional(),
     email: z.string().trim().email().max(320).optional(),
     current_password: z.string().min(1).max(128).optional(),
     password: z.string().min(8).max(128).optional(),

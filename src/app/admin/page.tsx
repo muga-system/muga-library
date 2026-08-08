@@ -13,6 +13,7 @@ import {
   Home,
 } from "lucide-react"
 import { AuthSignOutButton } from "@/components/auth-signout-button"
+import { UserAvatar } from "@/components/user-avatar"
 import { MugaHeader } from "@/components/muga-header"
 import { getAllDatabases, getAllRecords, getLoanStats } from "@/lib/services/database"
 import { getCurrentUser, isRequestsAdmin } from "@/lib/auth/service"
@@ -50,7 +51,7 @@ async function getDatabases(ownerId?: string) {
 
 export default async function AdminPage() {
   const user = await getCurrentUser()
-  if (isRequestsAdmin(user)) return <AdminIncorporacionesPanel initialAuthenticated={Boolean(user)} />
+  if (isRequestsAdmin(user)) return <AdminIncorporacionesPanel initialAuthenticated={Boolean(user)} initialUser={user} />
   const staffUser = await requireStaffPage()
   const ownerId = staffOwnerId(staffUser)
 
@@ -70,6 +71,7 @@ export default async function AdminPage() {
                 Inicio
               </Link>
               <AuthSignOutButton initialAuthenticated={Boolean(user)} />
+              <UserAvatar initialUser={user} />
             </div>
           }
         />
