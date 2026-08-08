@@ -3,6 +3,7 @@ import path from "node:path"
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   poweredByHeader: false,
+  agentRules: false,
   webpack(config) {
     config.resolve.alias = {
       ...config.resolve.alias,
