@@ -6,6 +6,7 @@ import { User, Building2, Bell, Shield, Download, Save, Check, Camera } from "lu
 import { uploadImage } from "@/lib/uploads/client"
 import { useNotifications } from "@/components/notifications-provider"
 import { MugaHeader } from "@/components/muga-header"
+import { PasswordInput } from "@/components/password-input"
 
 export default function ConfiguracionPage() {
   const notifications = useNotifications()
@@ -332,8 +333,7 @@ export default function ConfiguracionPage() {
                         <label className="block text-sm font-medium text-slate-700 mb-1.5">
                           Contraseña actual
                         </label>
-                        <input
-                          type="password"
+                        <PasswordInput
                           value={profile.currentPassword}
                           onChange={(e) => setProfile({ ...profile, currentPassword: e.target.value })}
                           className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
@@ -347,8 +347,7 @@ export default function ConfiguracionPage() {
                         <label className="block text-sm font-medium text-slate-700 mb-1.5">
                           Nueva contrasena
                         </label>
-                        <input
-                          type="password"
+                        <PasswordInput
                           value={profile.newPassword}
                           onChange={(e) => setProfile({ ...profile, newPassword: e.target.value })}
                           className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"
@@ -360,8 +359,7 @@ export default function ConfiguracionPage() {
                         <label className="block text-sm font-medium text-slate-700 mb-1.5">
                           Confirmar contrasena
                         </label>
-                        <input
-                          type="password"
+                        <PasswordInput
                           value={profile.confirmPassword}
                           onChange={(e) => setProfile({ ...profile, confirmPassword: e.target.value })}
                           className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900"

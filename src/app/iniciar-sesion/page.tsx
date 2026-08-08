@@ -5,6 +5,7 @@ import Link from "next/link"
 import { ArrowRight, BookOpen, Library, Loader2, Users } from "lucide-react"
 import { signInWithEmail } from "@/lib/auth/client"
 import { MugaHeader } from "@/components/muga-header"
+import { PasswordInput } from "@/components/password-input"
 
 export default function IniciarSesionPage() {
   const [nextPath, setNextPath] = useState("")
@@ -77,7 +78,7 @@ export default function IniciarSesionPage() {
               <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
                 Contraseña
               </label>
-              <input
+              <PasswordInput
                 id="password"
                 type="password"
                 required

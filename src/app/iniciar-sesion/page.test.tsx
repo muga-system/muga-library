@@ -57,6 +57,21 @@ describe('IniciarSesionPage', () => {
     expect(passwordInput).toHaveValue('password123')
   })
 
+  it('should toggle password visibility', async () => {
+    const user = userEvent.setup()
+    render(<IniciarSesionPage />)
+
+    const passwordInput = screen.getByLabelText(/contraseña/i)
+    expect(passwordInput).toHaveAttribute('type', 'password')
+
+    await user.click(screen.getByRole('button', { name: /mostrar/i }))
+    expect(passwordInput).toHaveAttribute('type', 'text')
+    expect(screen.getByRole('button', { name: /ocultar/i })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /ocultar/i }))
+    expect(passwordInput).toHaveAttribute('type', 'password')
+  })
+
   it('should show error message on failed login', async () => {
     const { signInWithEmail } = await import('@/lib/auth/client')
     ;(signInWithEmail as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
