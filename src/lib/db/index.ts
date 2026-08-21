@@ -7,8 +7,13 @@ import { NodeSqliteDatabase } from "./node-sqlite"
 import * as schema from "./schema"
 
 function getDatabasePath() {
-  const configured = process.env.DATABASE_URL || "file:./data/muga-library.db"
+  const configured =
+    process.env.DATABASE_URL ||
+    (process.env.NODE_ENV === "test" ? ":memory:" : "file:./data/muga-library.db")
   const path = configured.startsWith("file:") ? configured.slice(5) : configured
+  if (path === ":memory:") {
+    return path
+  }
   return resolve(/* turbopackIgnore: true */ process.cwd(), path)
 }
 
@@ -23,7 +28,7 @@ if (process.env.NEXT_PHASE !== "phase-production-build") {
 
 export const db = drizzle(sqlite as unknown as BetterSqliteDatabase, { schema })
 
-if (process.env.NEXT_PHASE !== "phase-production-build" && process.env.NODE_ENV !== "test") {
+if (process.env.NEXT_PHASE !== "phase-production-build") {
   migrate(db, { migrationsFolder: resolve(process.cwd(), "drizzle") })
 }
 
